@@ -1,7 +1,7 @@
 {
     "gopls": {
         "ui.semanticTokens": true,
-        "formatting.local": "github.com/orange-cloudavenue/cloudavenue-sdk-go",
+        "formatting.local": "github.com/orange-cloudavenue/kube-image-updater/",
     },
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [

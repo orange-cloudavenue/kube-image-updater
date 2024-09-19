@@ -4,8 +4,7 @@
         "prefix": "release-note-breaking-change",
         "body": [
             "```release-note:breaking-change",
-            "`resource/cloudavenue_xx` - Short Description.",
-            "`datasource/cloudavenue_xx` - Short Description.",
+            "`chore` - Short Description.",
             "```"
         ]
     },
@@ -15,7 +14,6 @@
         "prefix": "release-note-feature",
         "body": [
             "```release-note:feature",
-            "`resource/cloudavenue_xx` - Short Description.",
             "`datasource/cloudavenue_xx` - Short Description.",
             "```"
         ]

@@ -29,7 +29,7 @@ Useful links:
 * [Go](https://golang.org/doc/install) 1.22.x (to build the provider plugin)
 * [Cloud Avenue Platform](https://cloud.orange-business.com/offres/infrastructure-iaas/cloud-avenue/)
 
-## Using the Cloud Avenue Provider
+## Using the Kube Image Updater
 
 To quickly get started with the Kube Image Updater, you can use the following example:
 

@@ -84,7 +84,7 @@ linters:
 
 linters-settings:
   goimports:
-    local-prefixes: github.com/orange-cloudavenue/cloudavenue-sdk-go
+    local-prefixes: github.com/orange-cloudavenue/kube-image-updater
 
   gci:
     # Section configuration to compare against.
@@ -95,7 +95,7 @@ linters-settings:
     sections:
       - standard # Standard section: captures all standard packages.
       - default # Default section: contains all imports that could not be matched to another section type.
-      - prefix(github.com/orange-cloudavenue/cloudavenue-sdk-go) # Custom section: groups all imports with the specified Prefix.
+      - prefix(github.com/orange-cloudavenue/kube-image-updater) # Custom section: groups all imports with the specified Prefix.
       - blank # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
       - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
     skip-generated: true
@@ -104,7 +104,7 @@ linters-settings:
   gofumpt:
     # Module path which contains the source code being formatted.
     # Default: ""
-    module-path: github.com/orange-cloudavenue/cloudavenue-sdk-go
+    module-path: github.com/orange-cloudavenue/kube-image-updater
     # Choose whether to use the extra rules.
     # Default: false
     extra-rules: true
