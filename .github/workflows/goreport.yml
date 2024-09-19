@@ -1,0 +1,12 @@
+name: Go Report Card Refresh
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on:
+      group: Default
+    steps:
+      - uses: creekorful/goreportcard-action@v1.0
