@@ -22,12 +22,11 @@ Kubernetes Image Updater is a tool that allows you to update the images of your 
 
 Useful links:
 
-* [Cloud Avenue Provider documentation](https://registry.terraform.io/providers/orange-cloudavenue/cloudavenue/latest/docs)
+* [Kube Image Updater documentation](https://github.com/orange-cloudavenue/kube-image-updater/docs/)
 
 ## Requirements
 
 * [Go](https://golang.org/doc/install) 1.22.x (to build the provider plugin)
-* [Cloud Avenue Platform](https://cloud.orange-business.com/offres/infrastructure-iaas/cloud-avenue/)
 
 ## Using the Kube Image Updater
 

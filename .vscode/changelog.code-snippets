@@ -14,7 +14,7 @@
         "prefix": "release-note-feature",
         "body": [
             "```release-note:feature",
-            "`datasource/cloudavenue_xx` - Short Description.",
+            "`chore` - Short Description.",
             "```"
         ]
     },
@@ -24,8 +24,7 @@
         "prefix": "release-note-bug",
         "body": [
             "```release-note:bug",
-            "`resource/cloudavenue_xx` - Short Description.",
-            "`datasource/cloudavenue_xx` - Short Description.",
+            "`chore` - Short Description.",
             "```"
         ]
     },
@@ -35,8 +34,7 @@
         "prefix": "release-note-note",
         "body": [
             "```release-note:note",
-            "`resource/cloudavenue_xx` - Short Description.",
-            "`datasource/cloudavenue_xx` - Short Description.",
+            "`chore` - Short Description.",
             "```"
         ]
     },
@@ -46,8 +44,7 @@
         "prefix": "release-note-enhancement",
         "body": [
             "```release-note:enhancement",
-            "`resource/cloudavenue_xx` - Short Description.",
-            "`datasource/cloudavenue_xx` - Short Description.",
+            "`chore` - Short Description.",
             "```"
         ]
     },
