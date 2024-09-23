@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/gookit/event v1.1.2
+	github.com/alex-leonhardt/k8s-mutate-webhook v0.0.0-20200419125837-2e43f057f38d
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/reugn/go-quartz v0.12.0
