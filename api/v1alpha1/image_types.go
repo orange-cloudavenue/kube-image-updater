@@ -16,16 +16,9 @@ limitations under the License.
 
 package v1alpha1
 
-//nolint:gosec
 import (
-	"crypto/md5"
-	"encoding/json"
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -128,81 +121,4 @@ type ImageList struct {
 
 func init() {
 	SchemeBuilder.Register(&Image{}, &ImageList{})
-}
-
-// Annotations
-
-// addAnnotation adds an annotation to the Image
-func (i *Image) addAnnotation(key, value string) {
-	if i.Annotations == nil {
-		i.Annotations = map[string]string{}
-	}
-	i.Annotations[key] = value
-}
-
-// ListAnnotations
-func (i *Image) ListAnnotations() map[string]string {
-	return i.GetAnnotations()
-}
-
-// GetAnnotation
-func (i *Image) GetAnnotationAction() (annotations.AActionKey, error) {
-	action, ok := i.Annotations[annotations.AnnotationActionKey]
-	if !ok {
-		return "", fmt.Errorf("annotation %s not found", annotations.AnnotationActionKey)
-	}
-
-	return annotations.AActionKey(action), nil
-}
-
-// SetAnnotationAction
-func (i *Image) SetAnnotationAction(action annotations.AActionKey) {
-	i.addAnnotation(annotations.AnnotationActionKey, string(action))
-}
-
-// getChecksum
-func (i *Image) getCheckSum() (string, error) {
-	x, err := json.Marshal(i.Spec)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%x", (md5.Sum(x))), nil //nolint:gosec
-}
-
-// GetCheckSum
-func (i *Image) GetAnnotationCheckSum() (string, error) {
-	checksum, ok := i.Annotations[annotations.AnnotationCheckSumKey]
-	if !ok {
-		return "", fmt.Errorf("annotation %s not found", annotations.AnnotationCheckSumKey)
-	}
-
-	return checksum, nil
-}
-
-// RefreshCheckSum
-func (i *Image) RefreshCheckSum() error {
-	sum, err := i.getCheckSum()
-	if err != nil {
-		return err
-	}
-
-	i.addAnnotation(annotations.AnnotationCheckSumKey, sum)
-
-	return nil
-}
-
-// IsChanged
-func (i *Image) IsChanged() (bool, error) {
-	checksum, err := i.GetAnnotationCheckSum()
-	if err != nil {
-		return true, err
-	}
-
-	sum, err := i.getCheckSum()
-	if err != nil {
-		return true, err
-	}
-
-	return checksum != sum, nil
 }

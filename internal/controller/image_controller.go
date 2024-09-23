@@ -58,14 +58,16 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	an := annotations.New(ctx, &image)
+
 	log.Log.Info(fmt.Sprintf("Reconciling Image %s in namespace %s", req.Name, req.Namespace))
 
-	ok, err := image.IsChanged()
-	if err != nil || ok {
-		image.SetAnnotationAction(annotations.ActionRefresh)
+	ok, err := an.CheckSum().IsEqual(image.Spec)
+	if err != nil || !ok {
+		an.Action().Set(annotations.ActionRefresh)
 	}
 
-	if err := image.RefreshCheckSum(); err != nil {
+	if err := an.CheckSum().Set(image.Spec); err != nil {
 		log.Log.Error(err, "unable to refresh checksum")
 		return ctrl.Result{}, err
 	}

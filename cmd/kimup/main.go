@@ -53,16 +53,17 @@ func main() {
 			}
 
 			for _, image := range images.Items {
-				action, err := image.GetAnnotationAction()
-				if err != nil {
-					continue
-				}
-				if action == annotations.ActionRefresh {
+				an := annotations.New(ctx, &image)
+				if !an.Action().IsNull() && an.Action().Is(annotations.ActionRefresh) {
 					log.Infof("Image %s needs to be refreshed", image.Name)
 				}
 
+				an.Tag().Set(image.Spec.BaseTag)
+
 				// Remove the annotation annotations.AnnotationActionKey in the map[string]string
-				delete(image.Annotations, annotations.AnnotationActionKey)
+				an.Remove(annotations.KeyAction)
+
+				// an.Write()
 
 				if err := k.SetImage(ctx, image); err != nil {
 					log.Errorf("Error updating image: %v", err)

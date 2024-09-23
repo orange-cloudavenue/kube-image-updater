@@ -39,7 +39,7 @@ func (r *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Defaulter = &Image{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Image) Default() { //nolint:stylecheck
+func (r *Image) Default() {
 	imagelog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
