@@ -43,7 +43,21 @@ type (
 
 		// +kubebuilder:validation:Required
 		// +kubebuilder:validation:MinItems=1
+		Triggers []ImageTrigger `json:"triggers"`
+
+		// +kubebuilder:validation:Required
+		// +kubebuilder:validation:MinItems=1
 		Rules []ImageRule `json:"rules"`
+	}
+
+	// ImageTrigger
+	ImageTrigger struct {
+		// +kubebuilder:validation:Required
+		// +kubebuilder:validation:Enum=crontab;webhook
+		Type ImageTriggerType `json:"type"`
+
+		// +kubebuilder:validation:Optional
+		Value string `json:"value"`
 	}
 
 	// ImageRule
@@ -63,8 +77,9 @@ type (
 		Actions []ImageAction `json:"actions"`
 	}
 
-	ImageRuleType   string
-	ImageActionType string
+	ImageTriggerType string
+	ImageRuleType    string
+	ImageActionType  string
 
 	// ImageAction
 	ImageAction struct {
@@ -96,6 +111,10 @@ const (
 	ImageActionTypeApply           ImageActionType = "apply"
 	ImageActionTypeRequestApproval ImageActionType = "request-approval"
 	ImageActionTypeNotify          ImageActionType = "notify"
+
+	// * ImageTriggerType
+	ImageTriggerTypeCrontab ImageTriggerType = "crontab"
+	ImageTriggerTypeWebhook ImageTriggerType = "webhook"
 )
 
 // +kubebuilder:object:root=true

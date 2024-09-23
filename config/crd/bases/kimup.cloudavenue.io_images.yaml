@@ -100,9 +100,26 @@ spec:
                   type: object
                 minItems: 1
                 type: array
+              triggers:
+                items:
+                  description: ImageTrigger
+                  properties:
+                    type:
+                      enum:
+                      - crontab
+                      - webhook
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - type
+                  type: object
+                minItems: 1
+                type: array
             required:
             - image
             - rules
+            - triggers
             type: object
           status:
             description: ImageStatus defines the observed state of Image

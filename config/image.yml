@@ -9,7 +9,9 @@ metadata:
   namespace: default
 spec:
   image: ghcr.io/azrod/golink
-  # schedule: "0 0 * * *"
+  triggers:
+    - type: crontab
+      value: "1/10 * * * * *"
   rules:
     - name: example-8
       type: regex
