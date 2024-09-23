@@ -82,7 +82,11 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/operator cmd/operator/main.go
 	go build -o bin/kimup cmd/kimup/main.go
-	go build -o bin/webhook cmd/webhook/main.go
+	go build -o bin/webhook cmd/webhook/*
+
+.PHONY: build
+build-webhook: manifests generate fmt vet
+	go build -o bin/webhook cmd/webhook/*
 
 .PHONY: run-operator
 run-operator: manifests generate fmt vet ## Run a controller from your host.
@@ -94,7 +98,7 @@ run-kimup: manifests generate fmt vet ## Run the image updater from your host.
 
 .PHONY: run-webhook
 run-webhook: manifests generate fmt vet ## Run the webhook from your host.
-	go run ./cmd/webhook/main.go
+	go run ./cmd/webhook/
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -11,8 +12,37 @@ import (
 	"time"
 )
 
-// generateCert generate a self-signed CA for given organization
-// and sign certificate with the CA for given common name and dns names
+// generateTLS generates a self-signed certificate for the webhook server
+// and returns the certificate and the CA certificate
+// The certificate is generated with the following DNS names:
+// - webhookServiceName
+// - webhookServiceName.webhookNamespace
+// - webhookServiceName.webhookNamespace.svc
+func generateTLS() (tls.Certificate, *bytes.Buffer) {
+	// generate dns names
+	dnsNames := []string{
+		webhookServiceName,
+		webhookServiceName + "." + webhookNamespace,
+		webhookServiceName + "." + webhookNamespace + ".svc",
+	}
+	commonName := webhookServiceName + "." + webhookNamespace + ".svc"
+
+	caPEM, certPEM, certKeyPEM, err := generateCert([]string{admissionWebhookAnnotationBase}, dnsNames, commonName)
+	if err != nil {
+		errorLogger.Fatalf("Failed to generate ca and certificate key pair: %v", err)
+	}
+
+	pair, err := tls.X509KeyPair(certPEM.Bytes(), certKeyPEM.Bytes())
+	if err != nil {
+		errorLogger.Fatalf("Failed to load certificate key pair: %v", err)
+	}
+	return pair, caPEM
+}
+
+// generateCert generates a self-signed certificate with the given organizations, DNS names, and common name
+// The certificate is valid for 1 year
+// The certificate is signed by the CA certificate
+// The CA certificate is generated with the given organizations
 // it resurns the CA, certificate and private key in PEM format.
 func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error) {
 	// init CA config
