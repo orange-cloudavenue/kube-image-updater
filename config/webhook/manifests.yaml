@@ -1,0 +1,26 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-kimup-cloudavenue-io-v1alpha1-image
+  failurePolicy: Fail
+  name: mimage.kb.io
+  rules:
+  - apiGroups:
+    - kimup.cloudavenue.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - images
+  sideEffects: None

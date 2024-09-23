@@ -1,0 +1,18 @@
+apiVersion: kimup.cloudavenue.io/v1alpha1
+kind: Image
+metadata:
+  labels:
+    app.kubernetes.io/name: kube-image-updater
+    app.kubernetes.io/managed-by: kustomize
+    toto: tata
+  name: image-sample
+  namespace: default
+spec:
+  image: ghcr.io/azrod/golink
+  # schedule: "0 0 * * *"
+  rules:
+    - name: example-2
+      type: regex
+      value: "v20[0-9]{2}-[0-9]{2}-[0-9]{2}" # 2021-01-01
+      actions:
+        - type: apply

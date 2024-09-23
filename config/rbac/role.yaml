@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - kimup.cloudavenue.io
+  resources:
+  - images
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kimup.cloudavenue.io
+  resources:
+  - images/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kimup.cloudavenue.io
+  resources:
+  - images/status
+  verbs:
+  - get
+  - patch
+  - update
