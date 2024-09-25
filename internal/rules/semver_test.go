@@ -54,7 +54,7 @@ func TestSemverMajor_Evaluate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := rules.GetRule(rules.SemverMajor)
-			r.Init(tt.actualTag, tt.tagsAvailable)
+			r.Init(tt.actualTag, tt.tagsAvailable, "")
 			match, newTag, err := r.Evaluate()
 
 			if tt.expectedError {
@@ -123,7 +123,7 @@ func TestSemverMinor_Evaluate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := rules.GetRule(rules.SemverMinor)
-			r.Init(tt.actualTag, tt.tagsAvailable)
+			r.Init(tt.actualTag, tt.tagsAvailable, "")
 			match, newTag, err := r.Evaluate()
 
 			if tt.expectedError {
@@ -192,7 +192,7 @@ func TestSemverPatch_Evaluate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := rules.GetRule(rules.SemverPatch)
-			r.Init(tt.actualTag, tt.tagsAvailable)
+			r.Init(tt.actualTag, tt.tagsAvailable, "")
 			match, newTag, err := r.Evaluate()
 
 			if tt.expectedError {

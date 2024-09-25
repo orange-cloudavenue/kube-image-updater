@@ -15,22 +15,16 @@ var (
 )
 
 type (
-	Semver struct {
-		tags      []string
-		actualTag string
-		newTag    string
-	}
-
 	semverMajor struct {
-		Semver
+		rule
 	}
 
 	semverMinor struct {
-		Semver
+		rule
 	}
 
 	semverPatch struct {
-		Semver
+		rule
 	}
 )
 
@@ -38,16 +32,6 @@ func init() {
 	RegisterRule(SemverMajor, &semverMajor{})
 	RegisterRule(SemverMinor, &semverMinor{})
 	RegisterRule(SemverPatch, &semverPatch{})
-}
-
-// * Generic func set tags for all semver rules
-func (s *Semver) Init(actualTag string, tagsAvailable []string) {
-	s.actualTag = actualTag
-	s.tags = tagsAvailable
-}
-
-func (s *Semver) GetNewTag() string {
-	return s.newTag
 }
 
 // ! semver-major rule
