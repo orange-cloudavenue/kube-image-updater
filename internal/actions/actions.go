@@ -50,12 +50,39 @@ func ParseActionName(name string) (Name, error) {
 	return "", ErrActionNotFound
 }
 
+// GetAction retrieves an action by its name.
+// It returns the corresponding ActionInterface and an error if the action is not found.
+//
+// Parameters:
+//   - name: The name of the action to retrieve.
+//
+// Returns:
+//   - ActionInterface: The action associated with the given name.
+//   - error: An error indicating if the action was not found (ErrActionNotFound).
 func GetAction(name Name) (ActionInterface, error) {
 	if _, ok := actions[name]; !ok {
 		return nil, ErrActionNotFound
 	}
 
 	return actions[name], nil
+}
+
+// GetActionWithUntypedName retrieves an action based on the provided untyped name.
+// It parses the action name and returns the corresponding ActionInterface.
+// If the name cannot be parsed, it returns an error.
+//
+// Parameters:
+//   - name: A string representing the untyped name of the action.
+//
+// Returns:
+//   - An ActionInterface corresponding to the parsed action name, or nil if not found.
+//   - An error if the action name could not be parsed.
+func GetActionWithUntypedName(name string) (ActionInterface, error) {
+	n, err := ParseActionName(name)
+	if err != nil {
+		return nil, err
+	}
+	return GetAction(n)
 }
 
 // String returns the string representation of the action name.
