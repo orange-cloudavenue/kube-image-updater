@@ -86,7 +86,7 @@ func mutate(ar *admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
 	infoLogger.Printf("AdmissionReview for Kind=%v, Namespace=%v Name=%v (%v) UID=%v patchOperation=%v UserInfo=%v",
 		req.Kind, req.Namespace, req.Name, pod.Name, req.UID, req.Operation, req.UserInfo)
 
-	// annotations := map[string]string{admissionWebhookAnnotationStatusKey: "updated"}
+	// create patch
 	patchBytes, err := createPatch(&pod)
 	if err != nil {
 		return &admissionv1.AdmissionResponse{
@@ -106,26 +106,29 @@ func mutate(ar *admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
 	}
 }
 
-// create mutation patch for resoures.
+// create mutation patch for pod.
 func createPatch(pod *corev1.Pod) ([]byte, error) {
 	var patch []patchOperation
-
-	// patch = append(patch, addEnvironnement(pod.Spec.Containers, config.Env, "/spec/containers")...)
-	patch = append(patch, updateImage(pod)...)
+	infoLogger.Printf("Generate Patch for: %v\n", pod.Name)
+	patch = append(patch, updateImage(pod.Spec.Containers)...)
+	debugLogger.Printf("Patch created: %v\n", patch)
 
 	return json.Marshal(patch)
 }
 
-// updateImage updates the image of the container
-func updateImage(pod *corev1.Pod) (patch []patchOperation) {
-	// Handle Containers
-	for i := range pod.Spec.Containers {
-		container := &pod.Spec.Containers[i]
+// Generate an array of patch for all containers in the pod
+func updateImage(containers []corev1.Container) (patch []patchOperation) {
+	for container := range containers {
+		var path string
+		if containers[container].Image != "debian:1.2.3" {
+			path = fmt.Sprintf("/spec/containers/%d/image", container)
+		}
 		patch = append(patch, patchOperation{
 			Op:    "replace",
-			Path:  container.Image,
+			Path:  path,
 			Value: "debian:1.2.3",
 		})
 	}
+
 	return patch
 }

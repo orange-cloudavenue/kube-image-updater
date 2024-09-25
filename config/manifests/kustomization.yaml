@@ -1,0 +1,7 @@
+resources:
+- service.yaml
+- mutatingWebhookConfiguration.yaml
+- deployments.yaml
+
+
+   

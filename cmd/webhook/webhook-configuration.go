@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"reflect"
 
@@ -15,7 +14,7 @@ import (
 // createOrUpdateMutatingWebhookConfiguration creates or updates the mutating webhook configuration
 // for the webhook service. The CA is generated and used for the webhook.
 // This function create the request to the Kubernetes API server to create or update the mutating webhook configuration.
-func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookService, webhookNamespace string, k *client.Client) error {
+func createOrUpdateMutatingWebhookConfiguration(webhookService, webhookNamespace string, k *client.Client) error {
 	infoLogger.Println("Initializing the kube client...")
 
 	mutatingWebhookConfigV1Client := k.GetKubeClient().AdmissionregistrationV1()
@@ -32,15 +31,11 @@ func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookServ
 			AdmissionReviewVersions: []string{"v1", "v1beta1"},
 			SideEffects:             &sideEffect,
 			ClientConfig: admissionregistrationv1.WebhookClientConfig{
-				CABundle: caPEM.Bytes(), // self-generated CA for the webhook
-				// inside cluster - need to comment out the URL below
-				// Service: &admissionregistrationv1.ServiceReference{
-				// 	Name:      webhookService,
-				// 	Namespace: webhookNamespace,
-				// 	Path:      &webhookPath,
-				// },
-
-				URL: &webhookURL, // outside cluster - need to comment out the Service above
+				Service: &admissionregistrationv1.ServiceReference{
+					Name:      webhookService,
+					Namespace: webhookNamespace,
+					Path:      &webhookPathMutate,
+				},
 			},
 			Rules: []admissionregistrationv1.RuleWithOperations{
 				{
@@ -63,7 +58,6 @@ func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookServ
 	switch {
 	case err != nil && apierrors.IsNotFound(err):
 		if _, err := mutatingWebhookConfigV1Client.MutatingWebhookConfigurations().Create(context.TODO(), mutatingWebhookConfig, metav1.CreateOptions{}); err != nil {
-			// .Update(context.TODO(), mutatingWebhookConfig, metav1.UpdateOptions{}); err != nil {
 			warningLogger.Printf("Failed to update the mutatingwebhookconfiguration: %s", webhookConfigName)
 			return err
 		}
@@ -79,13 +73,12 @@ func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookServ
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].SideEffects, mutatingWebhookConfig.Webhooks[0].SideEffects) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].FailurePolicy, mutatingWebhookConfig.Webhooks[0].FailurePolicy) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].Rules, mutatingWebhookConfig.Webhooks[0].Rules) &&
-				// reflect.DeepEqual(foundWebhookConfig.Webhooks[0].NamespaceSelector, mutatingWebhookConfig.Webhooks[0].NamespaceSelector) &&
+				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].NamespaceSelector, mutatingWebhookConfig.Webhooks[0].NamespaceSelector) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.CABundle, mutatingWebhookConfig.Webhooks[0].ClientConfig.CABundle) &&
-				// reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.Service, mutatingWebhookConfig.Webhooks[0].ClientConfig.Service)) {
+				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.Service, mutatingWebhookConfig.Webhooks[0].ClientConfig.Service) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.URL, mutatingWebhookConfig.Webhooks[0].ClientConfig.URL)) {
 			mutatingWebhookConfig.ObjectMeta.ResourceVersion = foundWebhookConfig.ObjectMeta.ResourceVersion
 			if _, err := mutatingWebhookConfigV1Client.MutatingWebhookConfigurations().Update(context.TODO(), mutatingWebhookConfig, metav1.UpdateOptions{}); err != nil {
-				// .Create(context.TODO(), mutatingWebhookConfig, metav1.CreateOptions{}); err != nil {
 				warningLogger.Printf("Failed to update the mutatingwebhookconfiguration: %s", webhookConfigName)
 				return err
 			}

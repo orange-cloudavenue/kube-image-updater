@@ -18,22 +18,20 @@ import (
 )
 
 const (
-	admissionWebhookAnnotationBase = "kimup.cloudavenue.io"
-	// webhookURL 				   = "https://kimup-webhook-mutating.kube-image-updater.svc:8443/mutate" // service
-	// pathSpecImage                  = "/spec/containers/image"
+	admissionWebhookAnnotationBase = "kimup-webhook-mutating.default.svc" // service name of the webhook
 )
 
 var (
-	webhookURL    string = "https://kimup-webhook-mutating.default.svc:8443/mutate" // outside cluster
+	debugLogger   *log.Logger
 	infoLogger    *log.Logger
 	warningLogger *log.Logger
 	errorLogger   *log.Logger
-	// 	port                                 int
-	// 	envConfigFile                        string
+
 	webhookNamespace   string = "default"
-	webhookServiceName string
-	webhookConfigName  = "webhookconfig"
-	webhookPath        = "/mutate"
+	webhookServiceName string = "kimup-webhook-mutating"
+	webhookConfigName  string = "webhookconfig"
+	webhookPathMutate  string = "/mutate"
+	webhookPort        string = ":8443"
 
 	runtimeScheme = runtime.NewScheme()
 	codecs        = serializer.NewCodecFactory(runtimeScheme)
@@ -50,11 +48,12 @@ type (
 
 func init() {
 	// init loggers
+	debugLogger = log.New(os.Stderr, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 	infoLogger = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	warningLogger = log.New(os.Stderr, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
 	errorLogger = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	// webhook server running namespace
+	// webhook server running namespace (default to "default")
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
 	}
@@ -63,43 +62,46 @@ func init() {
 // Start http server for webhook
 func main() {
 	var err error
-	flag.StringVar(&webhookServiceName, "service-name", "kimup-webhook-mutating", "Kimup Webhook Mutating service name.")
+	flag.StringVar(&webhookServiceName, "service-name", webhookServiceName, "Kimup Webhook Mutating service name.")
 
 	flag.Parse()
 
-	k, err := client.New("/Users/micheneaudavid/.kube/config")
+	// homedir for kubeconfig
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	k, err := client.New(homedir + "/.kube/config")
 	if err != nil {
 		panic(err)
 	}
 
 	// generate cert for webhook
-	pair, caPEM := generateTLS()
+	pair, _ := generateTLS()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc(webhookPath, serveHandler)
+	mux.HandleFunc(webhookPathMutate, serveHandler)
 
 	// create or update the mutatingwebhookconfiguration
-	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, k)
+	err = createOrUpdateMutatingWebhookConfiguration(webhookServiceName, webhookNamespace, k)
 	if err != nil {
 		errorLogger.Fatalf("Failed to create or update the mutating webhook configuration: %v", err)
 	}
 
 	// define http server and server handler
 	s := &http.Server{
-		Addr:        ":8443",
+		Addr:        webhookPort,
 		Handler:     mux,
 		ReadTimeout: 10 * time.Second,
 		TLSConfig: &tls.Config{
 			Certificates: []tls.Certificate{pair},
 			MinVersion:   tls.VersionTLS12,
-			// InsecureSkipVerify: true, //nolint:gosec
 		},
 	}
 
-	// start the server
+	// start the HTTP server
 	go func() {
 		infoLogger.Printf("Starting webhook server on %s", s.Addr)
-		// start TLS server
 		if err := s.ListenAndServeTLS("", ""); err != nil {
 			log.Fatalf("Failed to start webhook server: %v", err)
 		}

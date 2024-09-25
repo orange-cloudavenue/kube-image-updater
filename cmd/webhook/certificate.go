@@ -24,6 +24,7 @@ func generateTLS() (tls.Certificate, *bytes.Buffer) {
 		webhookServiceName,
 		webhookServiceName + "." + webhookNamespace,
 		webhookServiceName + "." + webhookNamespace + ".svc",
+		// webhookServiceName + "." + webhookNamespace + ".svc" + ".cluster.local",
 	}
 	commonName := webhookServiceName + "." + webhookNamespace + ".svc"
 
@@ -75,6 +76,8 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 		Type:  "CERTIFICATE",
 		Bytes: caBytes,
 	})
+
+	debugLogger.Printf("CA certificate: %s", caPEM.String())
 
 	// new certificate config
 	newCert := &x509.Certificate{
