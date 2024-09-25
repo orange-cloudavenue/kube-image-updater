@@ -2,27 +2,30 @@ package actions
 
 import (
 	"context"
-
-	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 )
 
 type (
 	ActionInterface interface {
-		Init(actualTag, newTag string, image *v1alpha1.Image)
+		Init(actualTag, newTag string, image ImageInterface)
 		Execute(context.Context) error
 	}
 
-	Actions map[Name]ActionInterface
-	Name    string
+	_actions map[Name]ActionInterface
+	Name     string
+
+	ImageInterface interface {
+		GetAnnotations() map[string]string
+		SetStatusTag(string)
+	}
 
 	action struct {
 		actualTag string
 		newTag    string
-		image     *v1alpha1.Image
+		image     ImageInterface
 	}
 )
 
-var actions = make(Actions)
+var actions = make(_actions)
 
 const (
 	Apply Name = "apply"
@@ -90,7 +93,7 @@ func (n Name) String() string {
 	return string(n)
 }
 
-func (a *action) Init(actualTag, newTag string, image *v1alpha1.Image) {
+func (a *action) Init(actualTag, newTag string, image ImageInterface) {
 	a.actualTag = actualTag
 	a.newTag = newTag
 	a.image = image

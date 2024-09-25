@@ -76,6 +76,7 @@ const (
 
 	// Action Refresh
 	ActionRefresh AActionKey = "refresh"
+	ActionReload  AActionKey = "reload"
 	ActionDelete  AActionKey = "delete"
 )
 

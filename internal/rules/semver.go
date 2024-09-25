@@ -59,7 +59,7 @@ func (s *semverMajor) Evaluate() (matchWithRule bool, newTag string, err error) 
 		}
 
 		if v.Check(ac) {
-			s.newTag = t
+			s.SetNewTag(t)
 			return true, t, nil
 		}
 	}
@@ -81,7 +81,7 @@ func (s *semverMinor) Evaluate() (matchWithRule bool, newTag string, err error) 
 	for _, t := range s.tags {
 		ac, err := semver.NewVersion(t)
 		if err != nil {
-			log.Errorf("Error parsing actual tag %s: %s", t, err)
+			log.Errorf("Error parsing available tag %s: %s", t, err)
 			continue
 		}
 
@@ -92,7 +92,7 @@ func (s *semverMinor) Evaluate() (matchWithRule bool, newTag string, err error) 
 		}
 
 		if v.Check(ac) {
-			s.newTag = t
+			s.SetNewTag(t)
 			return true, t, nil
 		}
 	}
@@ -125,7 +125,7 @@ func (s *semverPatch) Evaluate() (matchWithRule bool, newTag string, err error) 
 		}
 
 		if v.Check(ac) {
-			s.newTag = t
+			s.SetNewTag(t)
 			return true, t, nil
 		}
 	}

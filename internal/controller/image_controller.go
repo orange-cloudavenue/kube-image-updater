@@ -64,7 +64,7 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	ok, err := an.CheckSum().IsEqual(image.Spec)
 	if err != nil || !ok {
-		an.Action().Set(annotations.ActionRefresh)
+		an.Action().Set(annotations.ActionReload)
 	}
 
 	if err := an.CheckSum().Set(image.Spec); err != nil {

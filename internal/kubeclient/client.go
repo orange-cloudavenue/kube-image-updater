@@ -144,8 +144,12 @@ func (c *Client) SetImage(ctx context.Context, image v1alpha1.Image) (err error)
 		return fmt.Errorf("failed to convert resource: %w", err)
 	}
 
-	if _, err = c.cImage().Namespace(image.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructedImage}, metav1.UpdateOptions{}); err != nil {
+	if _, err := c.cImage().Namespace(image.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructedImage}, metav1.UpdateOptions{}); err != nil {
 		return fmt.Errorf("failed to update resource: %w", err)
+	}
+
+	if _, err := c.cImage().Namespace(image.Namespace).UpdateStatus(ctx, &unstructured.Unstructured{Object: unstructedImage}, metav1.UpdateOptions{}); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
 	}
 
 	return

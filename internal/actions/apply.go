@@ -1,6 +1,10 @@
 package actions
 
-import "context"
+import (
+	"context"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
+)
 
 var _ ActionInterface = &apply{}
 
@@ -23,13 +27,16 @@ func init() {
 //
 // Returns:
 //   - error: An error indicating the result of the operation, or nil if successful. `ErrEmptyNewTag` is returned if the new tag is empty.
-func (a *apply) Execute(_ context.Context) error {
+func (a *apply) Execute(ctx context.Context) error {
 	if a.newTag == "" {
 		return ErrEmptyNewTag
 	}
 
+	an := annotations.New(ctx, a.image)
+	an.Tag().Set(a.newTag)
+
 	// update the image with the new tag
-	a.image.Status.Tag = a.newTag
+	a.image.SetStatusTag(a.newTag)
 
 	return nil
 }

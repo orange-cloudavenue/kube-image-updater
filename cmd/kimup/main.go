@@ -13,6 +13,7 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers/crontab"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
@@ -57,7 +58,8 @@ func main() {
 
 			for _, image := range images.Items {
 				an := annotations.New(ctx, &image)
-				if !an.Action().IsNull() && an.Action().Is(annotations.ActionRefresh) {
+				switch an.Action().Get() {
+				case annotations.ActionReload:
 					// * Here is only if the yaml has been updated and the operator has detected it
 
 					log.Infof("Image configuration %s in namespace %s has changed", image.Name, image.Namespace)
@@ -77,7 +79,17 @@ func main() {
 
 					// Remove the annotation annotations.AnnotationActionKey in the map[string]string
 					an.Remove(annotations.KeyAction)
-				} // * End refresh action
+
+				case annotations.ActionRefresh:
+					// * Here is only if the image has annotations.ActionRefresh
+					// Trigger the refresh of the image is deferred to the end of the loop to avoid Update kube API call
+					log.Infof("[Fire] Annotation trigger refresh for image %s in namespace %s", image.Name, image.Namespace)
+					_, err := triggers.Trigger(triggers.RefreshImage, image.Namespace, image.Name)
+					if err != nil {
+						log.Errorf("Error triggering event: %v", err)
+					}
+					an.Remove(annotations.KeyAction)
+				}
 
 				if err := k.SetImage(ctx, image); err != nil {
 					log.Errorf("Error updating image: %v", err)

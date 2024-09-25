@@ -124,6 +124,7 @@ const (
 // +kubebuilder:subresource:status
 
 // Image is the Schema for the images API
+// +kubebuilder:printcolumn:name="Tag",type=string,JSONPath=`.status.tag`
 type Image struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -143,4 +144,9 @@ type ImageList struct {
 
 func init() {
 	SchemeBuilder.Register(&Image{}, &ImageList{})
+}
+
+// SetStatusTag sets the status tag of the image
+func (i *Image) SetStatusTag(tag string) {
+	i.Status.Tag = tag
 }

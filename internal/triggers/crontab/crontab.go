@@ -22,9 +22,9 @@ func AddCronTab(namespace, name, crontab string) error {
 	log.Infof("Registering crontab (%s) for %s in namespace %s", crontab, name, namespace)
 	cronTrigger, _ := quartz.NewCronTrigger(crontab)
 	functionJob := job.NewFunctionJob(func(_ context.Context) (string, error) {
-		log.Infof("Fire crontab refresh for %s in namespace %s", name, namespace)
-		triggers.Trigger(triggers.RefreshImage, namespace, name)
-		return "", nil
+		log.Infof("[Fire] Crontab trigger refresh for image %s in namespace %s", name, namespace)
+		_, err := triggers.Trigger(triggers.RefreshImage, namespace, name)
+		return "", err
 	})
 
 	return sched.ScheduleJob(

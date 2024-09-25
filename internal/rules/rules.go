@@ -84,6 +84,13 @@ func ParseRuleName(name string) (Name, error) {
 	return "", ErrRuleNotFound
 }
 
+// SetNewTag sets the new tag associated with the rule.
+// It takes a string as an argument and sets the newTag field of the rule instance.
+func (r *rule) SetNewTag(newTag string) {
+	log.Debugf("Setting new tag %s", newTag)
+	r.newTag = newTag
+}
+
 // Init initializes the rule with the provided actual tag, available tags, and value.
 //
 // Parameters:
