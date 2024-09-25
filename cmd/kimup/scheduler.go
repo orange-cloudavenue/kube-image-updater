@@ -52,7 +52,7 @@ func initScheduler(k *kubeclient.Client) {
 			log.Debugf("[RefreshImage] %d tags available for %s", len(tagsAvailable), image.Spec.Image)
 
 			for _, rule := range image.Spec.Rules {
-				r, err := rules.GetRuleWithUntypedName(string(rule.Type))
+				r, err := rules.GetRule(rule.Type)
 				if err != nil {
 					log.Errorf("Error getting rule: %v", err)
 					continue
@@ -72,7 +72,7 @@ func initScheduler(k *kubeclient.Client) {
 
 				if match {
 					for _, action := range rule.Actions {
-						a, err := actions.GetActionWithUntypedName(string(action.Type))
+						a, err := actions.GetAction(action.Type)
 						if err != nil {
 							log.Errorf("Error getting action: %v", err)
 							continue

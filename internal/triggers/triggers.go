@@ -5,11 +5,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type EventName string
+type (
+	Name      string
+	EventName string
+)
 
 const (
 	RefreshImage  EventName = "refresh.image"
 	RefreshStatus EventName = "refresh.status"
+
+	Crontab Name = "crontab"
+	Webhook Name = "webhook"
 )
 
 func (e EventName) String() string {

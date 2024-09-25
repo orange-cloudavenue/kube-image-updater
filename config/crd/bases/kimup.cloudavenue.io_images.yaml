@@ -15,6 +15,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.image
+      name: Image
+      type: string
     - jsonPath: .status.tag
       name: Tag
       type: string
@@ -80,6 +83,8 @@ spec:
                             - apply
                             - request-approval
                             - notify
+                            type: string
+                          value:
                             type: string
                         required:
                         - type

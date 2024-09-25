@@ -19,6 +19,10 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/rules"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -54,7 +58,7 @@ type (
 	ImageTrigger struct {
 		// +kubebuilder:validation:Required
 		// +kubebuilder:validation:Enum=crontab;webhook
-		Type ImageTriggerType `json:"type"`
+		Type triggers.Name `json:"type"`
 
 		// +kubebuilder:validation:Optional
 		Value string `json:"value"`
@@ -67,7 +71,7 @@ type (
 
 		// +kubebuilder:validation:Required
 		// +kubebuilder:validation:Enum=semver-major;semver-minor;semver-patch;regex
-		Type ImageRuleType `json:"type"`
+		Type rules.Name `json:"type"`
 
 		// +kubebuilder:validation:Optional
 		Value string `json:"value,omitempty"`
@@ -77,15 +81,14 @@ type (
 		Actions []ImageAction `json:"actions"`
 	}
 
-	ImageTriggerType string
-	ImageRuleType    string
-	ImageActionType  string
-
 	// ImageAction
 	ImageAction struct {
 		// +kubebuilder:validation:Required
 		// +kubebuilder:validation:Enum=apply;request-approval;notify
-		Type ImageActionType `json:"type"`
+		Type actions.Name `json:"type"`
+
+		// +kubebuilder:validation:Optional
+		Value string `json:"value,omitempty"`
 	}
 
 	// ImageStatus defines the observed state of Image
@@ -96,34 +99,11 @@ type (
 	}
 )
 
-const (
-	// * ImageRuleType
-
-	// TODO(mickael) use const in rules package
-	// Semver
-	ImageRuleTypeSemverMajor ImageRuleType = "semver-major"
-	ImageRuleTypeSemverMinor ImageRuleType = "semver-minor"
-	ImageRuleTypeSemverPatch ImageRuleType = "semver-patch"
-
-	// Regex
-	ImageRuleTypeRegex ImageRuleType = "regex"
-
-	// TODO(mickael) use const in action package
-	// * ImageActionType
-	ImageActionTypeApply           ImageActionType = "apply"
-	ImageActionTypeRequestApproval ImageActionType = "request-approval"
-	ImageActionTypeNotify          ImageActionType = "notify"
-
-	// TODO(mickael) use const in trigger package
-	// * ImageTriggerType
-	ImageTriggerTypeCrontab ImageTriggerType = "crontab"
-	ImageTriggerTypeWebhook ImageTriggerType = "webhook"
-)
-
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
 // Image is the Schema for the images API
+// +kubebuilder:printcolumn:name="Image",type=string,JSONPath=`.spec.image`
 // +kubebuilder:printcolumn:name="Tag",type=string,JSONPath=`.status.tag`
 type Image struct {
 	metav1.TypeMeta   `json:",inline"`

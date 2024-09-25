@@ -10,7 +10,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
@@ -66,13 +65,13 @@ func main() {
 
 					for _, trigger := range image.Spec.Triggers {
 						switch trigger.Type {
-						case v1alpha1.ImageTriggerTypeCrontab:
+						case triggers.Crontab:
 							if ok, err := crontab.IsExistingJob(crontab.BuildKey(image.Namespace, image.Name)); err != nil || ok {
 								if err := crontab.RemoveJob(crontab.BuildKey(image.Namespace, image.Name)); err != nil {
 									log.Errorf("Error removing crontab: %v", err)
 								}
 							}
-						case v1alpha1.ImageTriggerTypeWebhook:
+						case triggers.Webhook:
 							log.Info("Webhook trigger not implemented yet")
 						}
 					}
@@ -98,13 +97,13 @@ func main() {
 				// * Triggers
 				for _, trigger := range image.Spec.Triggers {
 					switch trigger.Type {
-					case v1alpha1.ImageTriggerTypeCrontab:
+					case triggers.Crontab:
 						if ok, err := crontab.IsExistingJob(crontab.BuildKey(image.Namespace, image.Name)); err != nil || !ok {
 							if err := crontab.AddCronTab(image.Namespace, image.Name, trigger.Value); err != nil {
 								log.Errorf("Error adding cronjob: %v", err)
 							}
 						}
-					case v1alpha1.ImageTriggerTypeWebhook:
+					case triggers.Webhook:
 						log.Info("Webhook trigger not implemented yet")
 					}
 				}
