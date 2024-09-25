@@ -29,9 +29,9 @@ type (
 )
 
 func init() {
-	RegisterRule(SemverMajor, &semverMajor{})
-	RegisterRule(SemverMinor, &semverMinor{})
-	RegisterRule(SemverPatch, &semverPatch{})
+	register(SemverMajor, &semverMajor{})
+	register(SemverMinor, &semverMinor{})
+	register(SemverPatch, &semverPatch{})
 }
 
 // ! semver-major rule

@@ -15,7 +15,7 @@ type (
 )
 
 func init() {
-	RegisterRule(Regex, &regex{})
+	register(Regex, &regex{})
 }
 
 // ! regex rule

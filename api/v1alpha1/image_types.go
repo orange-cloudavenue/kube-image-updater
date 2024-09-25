@@ -92,12 +92,14 @@ type (
 	ImageStatus struct {
 		// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 		// Important: Run "make" to regenerate code after modifying this file
+		Tag string `json:"tag"`
 	}
 )
 
 const (
 	// * ImageRuleType
 
+	// TODO(mickael) use const in rules package
 	// Semver
 	ImageRuleTypeSemverMajor ImageRuleType = "semver-major"
 	ImageRuleTypeSemverMinor ImageRuleType = "semver-minor"
@@ -106,12 +108,13 @@ const (
 	// Regex
 	ImageRuleTypeRegex ImageRuleType = "regex"
 
+	// TODO(mickael) use const in action package
 	// * ImageActionType
-
 	ImageActionTypeApply           ImageActionType = "apply"
 	ImageActionTypeRequestApproval ImageActionType = "request-approval"
 	ImageActionTypeNotify          ImageActionType = "notify"
 
+	// TODO(mickael) use const in trigger package
 	// * ImageTriggerType
 	ImageTriggerTypeCrontab ImageTriggerType = "crontab"
 	ImageTriggerTypeWebhook ImageTriggerType = "webhook"

@@ -49,7 +49,8 @@ func TestRegex_Evaluate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := rules.GetRule(rules.Regex)
+			r, err := rules.GetRule(rules.Regex)
+			assert.NoError(t, err)
 			r.Init(tt.actualTag, tt.tags, tt.value)
 
 			match, tag, err := r.Evaluate()
