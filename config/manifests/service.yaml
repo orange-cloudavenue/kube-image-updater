@@ -10,16 +10,3 @@
 #     - port: 443
 #       protocol: TCP
 #       targetPort: 8443
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kimup-webhook-mutating
-  namespace: default
-spec:
-  type: ExternalName
-  externalName: your.example.com
-  ports:
-    - port: 8443
-      protocol: TCP
-      targetPort: 8443

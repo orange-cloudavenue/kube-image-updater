@@ -28,7 +28,7 @@ func generateTLS() (tls.Certificate, *bytes.Buffer) {
 	}
 	commonName := webhookServiceName + "." + webhookNamespace + ".svc"
 
-	caPEM, certPEM, certKeyPEM, err := generateCert([]string{admissionWebhookAnnotationBase}, dnsNames, commonName)
+	caPEM, certPEM, certKeyPEM, err := generateCert([]string{webhookBase}, dnsNames, commonName)
 	if err != nil {
 		errorLogger.Fatalf("Failed to generate ca and certificate key pair: %v", err)
 	}
@@ -77,7 +77,10 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 		Bytes: caBytes,
 	})
 
-	debugLogger.Printf("CA certificate: %s", caPEM.String())
+	// print CA certificate if insideCluster is false
+	if !insideCluster {
+		debugLogger.Printf("CA certificate: %s", caPEM.String())
+	}
 
 	// new certificate config
 	newCert := &x509.Certificate{

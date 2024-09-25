@@ -17,21 +17,19 @@ import (
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 )
 
-const (
-	admissionWebhookAnnotationBase = "kimup-webhook-mutating.default.svc" // service name of the webhook
-)
-
 var (
+	insideCluster bool = true // running inside k8s cluster
 	debugLogger   *log.Logger
 	infoLogger    *log.Logger
 	warningLogger *log.Logger
 	errorLogger   *log.Logger
 
-	webhookNamespace   string = "default"
-	webhookServiceName string = "kimup-webhook-mutating"
+	webhookNamespace   string = "example.com"
+	webhookServiceName string = "your"
 	webhookConfigName  string = "webhookconfig"
 	webhookPathMutate  string = "/mutate"
 	webhookPort        string = ":8443"
+	webhookBase               = webhookServiceName + "." + webhookNamespace
 
 	runtimeScheme = runtime.NewScheme()
 	codecs        = serializer.NewCodecFactory(runtimeScheme)
@@ -62,7 +60,11 @@ func init() {
 // Start http server for webhook
 func main() {
 	var err error
+	flag.StringVar(&webhookPort, "webhook-port", webhookPort, "Webhook server port.ex: :8443")
+	flag.StringVar(&webhookNamespace, "namespace", webhookNamespace, "Kimup Webhook Mutating namespace.")
 	flag.StringVar(&webhookServiceName, "service-name", webhookServiceName, "Kimup Webhook Mutating service name.")
+
+	flag.BoolVar(&insideCluster, "inside-cluster", true, "True if running inside k8s cluster.")
 
 	flag.Parse()
 
@@ -77,13 +79,13 @@ func main() {
 	}
 
 	// generate cert for webhook
-	pair, _ := generateTLS()
+	pair, caPEM := generateTLS()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(webhookPathMutate, serveHandler)
 
 	// create or update the mutatingwebhookconfiguration
-	err = createOrUpdateMutatingWebhookConfiguration(webhookServiceName, webhookNamespace, k)
+	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, k)
 	if err != nil {
 		errorLogger.Fatalf("Failed to create or update the mutating webhook configuration: %v", err)
 	}
@@ -96,12 +98,13 @@ func main() {
 		TLSConfig: &tls.Config{
 			Certificates: []tls.Certificate{pair},
 			MinVersion:   tls.VersionTLS12,
+			// InsecureSkipVerify: true, //nolint:gosec
 		},
 	}
 
 	// start the HTTP server
 	go func() {
-		infoLogger.Printf("Starting webhook server on %s", s.Addr)
+		infoLogger.Printf("Starting webhook server on %s from insideCluster=%v", s.Addr, insideCluster)
 		if err := s.ListenAndServeTLS("", ""); err != nil {
 			log.Fatalf("Failed to start webhook server: %v", err)
 		}

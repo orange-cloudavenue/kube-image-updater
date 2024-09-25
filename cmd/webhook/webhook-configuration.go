@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"reflect"
 
@@ -14,10 +15,33 @@ import (
 // createOrUpdateMutatingWebhookConfiguration creates or updates the mutating webhook configuration
 // for the webhook service. The CA is generated and used for the webhook.
 // This function create the request to the Kubernetes API server to create or update the mutating webhook configuration.
-func createOrUpdateMutatingWebhookConfiguration(webhookService, webhookNamespace string, k *client.Client) error {
+func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookService, webhookNamespace string, k *client.Client) error {
 	infoLogger.Println("Initializing the kube client...")
 
 	mutatingWebhookConfigV1Client := k.GetKubeClient().AdmissionregistrationV1()
+
+	var clientConfig admissionregistrationv1.WebhookClientConfig
+	switch insideCluster {
+	case true:
+		clientConfig = admissionregistrationv1.WebhookClientConfig{
+			Service: &admissionregistrationv1.ServiceReference{
+				Name:      webhookService,
+				Namespace: webhookNamespace,
+				Path:      &webhookPathMutate,
+			},
+		}
+	case false:
+		// the webhook is running outside the cluster
+		// Please note that the webhook service must be accessible from the Kubernetes cluster.
+		// Each time you change webhook service name, namespace, or port, you need to update the MutatingWebhookConfiguration
+		// Also you need to modifiy the manifest MutatingWebhookConfiguration to push new caPEM to allow client to trust the webhook
+		// The caPEM is generated and printed to the logs when the webhook starts for outside cluster
+		url := "https://" + webhookService + "." + webhookNamespace + webhookPort + webhookPathMutate
+		clientConfig = admissionregistrationv1.WebhookClientConfig{
+			CABundle: caPEM.Bytes(),
+			URL:      &url,
+		}
+	}
 
 	infoLogger.Printf("Creating or updating the mutatingwebhookconfiguration: %s", webhookConfigName)
 	fail := admissionregistrationv1.Fail
@@ -27,16 +51,11 @@ func createOrUpdateMutatingWebhookConfiguration(webhookService, webhookNamespace
 			Name: webhookConfigName,
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{{
-			Name:                    admissionWebhookAnnotationBase,
+			Name:                    webhookService + "." + webhookNamespace + ".svc",
 			AdmissionReviewVersions: []string{"v1", "v1beta1"},
 			SideEffects:             &sideEffect,
-			ClientConfig: admissionregistrationv1.WebhookClientConfig{
-				Service: &admissionregistrationv1.ServiceReference{
-					Name:      webhookService,
-					Namespace: webhookNamespace,
-					Path:      &webhookPathMutate,
-				},
-			},
+			ClientConfig:            clientConfig,
+
 			Rules: []admissionregistrationv1.RuleWithOperations{
 				{
 					Operations: []admissionregistrationv1.OperationType{
@@ -73,9 +92,9 @@ func createOrUpdateMutatingWebhookConfiguration(webhookService, webhookNamespace
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].SideEffects, mutatingWebhookConfig.Webhooks[0].SideEffects) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].FailurePolicy, mutatingWebhookConfig.Webhooks[0].FailurePolicy) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].Rules, mutatingWebhookConfig.Webhooks[0].Rules) &&
-				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].NamespaceSelector, mutatingWebhookConfig.Webhooks[0].NamespaceSelector) &&
+				// reflect.DeepEqual(foundWebhookConfig.Webhooks[0].NamespaceSelector, mutatingWebhookConfig.Webhooks[0].NamespaceSelector) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.CABundle, mutatingWebhookConfig.Webhooks[0].ClientConfig.CABundle) &&
-				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.Service, mutatingWebhookConfig.Webhooks[0].ClientConfig.Service) &&
+				// reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.Service, mutatingWebhookConfig.Webhooks[0].ClientConfig.Service) &&
 				reflect.DeepEqual(foundWebhookConfig.Webhooks[0].ClientConfig.URL, mutatingWebhookConfig.Webhooks[0].ClientConfig.URL)) {
 			mutatingWebhookConfig.ObjectMeta.ResourceVersion = foundWebhookConfig.ObjectMeta.ResourceVersion
 			if _, err := mutatingWebhookConfigV1Client.MutatingWebhookConfigurations().Update(context.TODO(), mutatingWebhookConfig, metav1.UpdateOptions{}); err != nil {
