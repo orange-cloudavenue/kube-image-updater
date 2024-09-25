@@ -1,0 +1,199 @@
+project_name: kube-image-updater
+version: 2
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+
+release:
+  prerelease: auto
+
+snapshot:
+  name_template: "{{ .Tag }}"
+
+checksum:
+  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
+
+builds:
+  - id: "kimup"
+    binary: kimup
+    main: ./cmd/kimup
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+  - id: "kimup-operator"
+    binary: kimup-operator
+    main: ./cmd/operator
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+  - id: "kimup-webhook"
+    binary: kimup-webhook
+    main: ./cmd/webhook
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+dockers:
+  # * KIMUP
+  - goarch: amd64
+    image_templates:
+    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}:v{{ .Version }}-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    ids:
+      - kimup
+    build_flag_templates:
+    - --platform=linux/amd64
+    - "--build-arg=BINNAME=kimup"
+    - --pull
+    - --label=org.opencontainers.image.title="kimup"
+    - --label=org.opencontainers.image.description="kube-image-updater"
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{.ProjectName}}
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+  - goarch: arm64
+    image_templates:
+    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-arm64v8"
+    dockerfile: Dockerfile
+    use: buildx
+    ids:
+      - kimup
+    build_flag_templates:
+    - --platform=linux/arm64/v8
+    - "--build-arg=BINNAME=kimup"
+    - --pull
+    - --label=org.opencontainers.image.title="kimup"
+    - --label=org.opencontainers.image.description={{ .ProjectName }}
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+  # * KIMUP-OPERATOR
+  - goarch: amd64
+    image_templates:
+    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-operator:v{{ .Version }}-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    ids:
+      - kimup-operator
+    build_flag_templates:
+    - --platform=linux/amd64
+    - "--build-arg=BINNAME=kimup-operator"
+    - --pull
+    - --label=org.opencontainers.image.title="kimup-operator"
+    - --label=org.opencontainers.image.description="kube-image-updater-operator"
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+  - goarch: arm64
+    image_templates:
+    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-arm64v8"
+    dockerfile: Dockerfile
+    use: buildx
+    ids:
+      - kimup-operator
+    build_flag_templates:
+    - --platform=linux/arm64/v8
+    - "--build-arg=BINNAME=kimup-operator"
+    - --pull
+    - --label=org.opencontainers.image.title="kimup-operator"
+    - --label=org.opencontainers.image.description="kube-image-updater-operator"
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+  # * KIMUP-WEBHOOK
+  - goarch: amd64
+    image_templates:
+    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-webhook:v{{ .Version }}-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    ids:
+      - kimup-webhook
+    build_flag_templates:
+    - --platform=linux/amd64
+    - "--build-arg=BINNAME=kimup-webhook"
+    - --pull
+    - --label=org.opencontainers.image.title="kimup-webhook"
+    - --label=org.opencontainers.image.description="kube-image-updater-webhook"
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-webhook
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-webhook
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+  - goarch: arm64
+    image_templates:
+    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-webhook:v{{ .Version }}-arm64v8"
+    dockerfile: Dockerfile
+    use: buildx
+    ids:
+      - kimup-webhook
+    build_flag_templates:
+    - --platform=linux/arm64/v8
+    - "--build-arg=BINNAME=kimup-webhook"
+    - --pull
+    - --label=org.opencontainers.image.title="kimup-webhook"
+    - --label=org.opencontainers.image.description="kube-image-updater-webhook"
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-webhook
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-webhook
+    - --label=org.opencontainers.image.version={{ .Version }}
+    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+    - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+docker_manifests:
+# * KIMUP
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}"
+  image_templates:
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-arm64v8"
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:latest"
+  image_templates:
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-arm64v8"
+
+# * KIMUP-OPERATOR
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}"
+  image_templates:
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-arm64v8"
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:latest"
+  image_templates:
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-arm64v8"
+
+# * KIMUP-WEBHOOK
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-webhook:v{{ .Version }}"
+  image_templates:
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-webhook:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-webhook:v{{ .Version }}-arm64v8"
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-webhook:latest"
+  image_templates:
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-webhook:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-webhook:v{{ .Version }}-arm64v8"
