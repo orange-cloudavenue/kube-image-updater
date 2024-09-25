@@ -8,7 +8,8 @@ import (
 type EventName string
 
 const (
-	RefreshImage EventName = "refresh.image"
+	RefreshImage  EventName = "refresh.image"
+	RefreshStatus EventName = "refresh.status"
 )
 
 func (e EventName) String() string {

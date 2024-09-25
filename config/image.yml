@@ -11,7 +11,7 @@ spec:
   baseTag: v0.0.19
   triggers:
     - type: crontab
-      value: "00 */12 * * * *"
+      value: "00 00 */12 * * *"
   rules:
     - name: Automatic update semver minor
       type: semver-minor

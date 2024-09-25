@@ -77,6 +77,14 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
+	// * Status
+
+	image.SetStatusTag(an.Tag().Get())
+	if err := r.Status().Update(ctx, &image); err != nil {
+		log.Log.Error(err, "unable to update Image status")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 

@@ -2,6 +2,7 @@ package kubeclient
 
 import (
 	"context"
+	"flag"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +23,10 @@ type (
 		d *dynamic.DynamicClient
 	}
 )
+
+func init() {
+	flag.String("kubeconfig", "", "path to the kubeconfig file")
+}
 
 // New creates a new kubernetes client
 // kubeConfigPath is the path to the kubeconfig file (empty for in-cluster)
@@ -144,13 +149,27 @@ func (c *Client) SetImage(ctx context.Context, image v1alpha1.Image) (err error)
 		return fmt.Errorf("failed to convert resource: %w", err)
 	}
 
-	if _, err := c.cImage().Namespace(image.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructedImage}, metav1.UpdateOptions{}); err != nil {
+	_, err = c.cImage().Namespace(image.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructedImage}, metav1.UpdateOptions{})
+	if err != nil {
 		return fmt.Errorf("failed to update resource: %w", err)
 	}
 
-	if _, err := c.cImage().Namespace(image.Namespace).UpdateStatus(ctx, &unstructured.Unstructured{Object: unstructedImage}, metav1.UpdateOptions{}); err != nil {
-		return fmt.Errorf("failed to update status: %w", err)
-	}
+	// xImage := v1alpha1.Image{}
+	// if err := runtime.DefaultUnstructuredConverter.
+	// 	FromUnstructured(x.UnstructuredContent(), &xImage); err != nil {
+	// 	return fmt.Errorf("failed to convert resource: %w", err)
+	// }
+
+	// xImage.Status = image.Status
+	// xUnstructedImage, err := runtime.DefaultUnstructuredConverter.
+	// 	ToUnstructured(&image)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to convert resource: %w", err)
+	// }
+
+	// if _, err := c.cImage().Namespace(image.Namespace).UpdateStatus(ctx, &unstructured.Unstructured{Object: xUnstructedImage}, metav1.UpdateOptions{}); err != nil {
+	// 	return fmt.Errorf("failed to update status: %w", err)
+	// }
 
 	return
 }
