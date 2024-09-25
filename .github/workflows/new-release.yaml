@@ -139,6 +139,14 @@ jobs:
         with:
           body_path: ${{ steps.release-notes-download.outputs.download-path }}/release-notes.txt
           tag_name: ${{ needs.pre-check.outputs.TAG_NAME }}
+  trigger-doc-update:
+    needs: [publish-release, pre-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          event-type: update-doc
   changelog-newversion:
     needs: [publish-release, golangci-lint, pre-check]
     runs-on: ubuntu-latest
