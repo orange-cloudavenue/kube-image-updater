@@ -1,15 +1,25 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/pem"
 	"math/big"
+	"os"
+	"strings"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
 
 // generateTLS generates a self-signed certificate for the webhook server
@@ -79,7 +89,10 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 
 	// print CA certificate if insideCluster is false
 	if !insideCluster {
-		debugLogger.Printf("CA certificate: %s", caPEM.String())
+		writeNewCA(caPEM, manifestWebhookPath)
+		applyManifest(manifestWebhookPath)
+
+		debugLogger.Printf("CA certificate Encoded: %s", base64.StdEncoding.EncodeToString(caPEM.Bytes()))
 	}
 
 	// new certificate config
@@ -123,4 +136,76 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 	})
 
 	return caPEM, newCertPEM, newPrivateKeyPEM, nil
+}
+
+func writeNewCA(caPEM *bytes.Buffer, filePath string) {
+	newCABundle := base64.StdEncoding.EncodeToString(caPEM.Bytes())
+
+	// Lire le fichier
+	file, err := os.Open(filePath)
+	if err != nil {
+		warningLogger.Printf("Failed to open file: %v\n", err)
+		return
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "caBundle:") {
+			line = "      caBundle: " + "\"" + newCABundle + "\""
+		}
+		lines = append(lines, line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		warningLogger.Printf("Failed to read file: %v\n", err)
+		return
+	}
+
+	// Écrire les modifications dans le fichier
+	file, err = os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC, 0o644)
+	if err != nil {
+		warningLogger.Printf("Failed to open file: %v\n", err)
+		return
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	for _, line := range lines {
+		_, err := writer.WriteString(line + "\n")
+		if err != nil {
+			warningLogger.Printf("Failed to write to file: %v\n", err)
+			return
+		}
+	}
+	writer.Flush()
+}
+
+func applyManifest(file string) {
+	// Lire le manifest YAML
+	manifestBytes, err := os.ReadFile(file)
+	if err != nil {
+		warningLogger.Printf("Failed to read manifest: %v\n", err)
+		return
+	}
+
+	// Décoder le manifest YAML en objets Kubernetes
+	decoder := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
+	obj := &unstructured.Unstructured{}
+	_, _, err = decoder.Decode(manifestBytes, nil, obj)
+	if err != nil {
+		warningLogger.Printf("Failed to decode manifest: %v\n", err)
+		return
+	}
+
+	// Appliquer les objets Kubernetes au cluster
+	gvr := obj.GroupVersionKind().GroupVersion().WithResource("mutatingwebhookconfigurations")
+	_, err = kubeClient.GetDynamicClient().Resource(gvr).Apply(context.TODO(), obj.GetName(), obj, metav1.ApplyOptions{Force: true, FieldManager: "kumi-webhook"})
+	if err != nil {
+		warningLogger.Printf("Failed to apply manifest: %v\n", err)
+		return
+	}
+	infoLogger.Printf("Successfully applied manifest: %s", file)
 }

@@ -35,7 +35,8 @@ var (
 	codecs        = serializer.NewCodecFactory(runtimeScheme)
 	deserializer  = codecs.UniversalDeserializer()
 
-	kubeClient *client.Client
+	kubeClient          *client.Client
+	manifestWebhookPath string = "./config/manifests/mutatingWebhookConfiguration.yaml"
 )
 
 func init() {
