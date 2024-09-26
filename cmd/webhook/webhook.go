@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 )
 
@@ -112,6 +112,7 @@ func mutate(ctx context.Context, ar *admissionv1.AdmissionReview) *admissionv1.A
 
 // create mutation patch for pod.
 func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
+	var err error
 	// find annotation enabled
 	an := annotations.New(ctx, pod)
 	if !an.Enabled().Get() {
@@ -122,22 +123,42 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 	infoLogger.Printf("Generate Patch for: %v\n", pod.Name)
 
 	for i, container := range pod.Spec.Containers {
-		// find the image associated with the pod
-		image, err := kubeClient.FindImage(ctx, pod.Namespace, container.Image)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find image: %w", err)
+		// check if an annotation exist
+		crdName, _ := an.Images().Get(container.Image)
+
+		// If crdName is empty, it means that we need to find it
+		var image v1alpha1.Image
+		if crdName == "" {
+			// find the image associated with the pod
+			image, err = kubeClient.FindImage(ctx, pod.Namespace, container.Image)
+			if err != nil {
+				warningLogger.Printf("failed to find image: %v", err)
+				continue
+			}
+		} else {
+			image, err = kubeClient.GetImage(ctx, pod.Namespace, crdName)
+			if err != nil {
+				warningLogger.Printf("failed to get image: %v", err)
+				continue
+			}
 		}
 
 		// Set the image to the pod
-		var path string
-		if parseImage(pod.Spec.Containers[i].Image)[1] != image.Status.Tag {
-			path = fmt.Sprintf("/spec/containers/%d/image", i)
+		if image.ImageIsEqual(container.Image) {
+			patch = append(patch, patchOperation{
+				Op:    "replace",
+				Path:  fmt.Sprintf("/spec/containers/%d/image", i),
+				Value: image.GetImageWithTag(),
+			})
 		}
-		patch = append(patch, patchOperation{
-			Op:    "replace",
-			Path:  path,
-			Value: image.Status.Tag,
-		})
+
+		an.Containers().Set(container.Name, image.GetImageWithoutTag(), image.GetTag())
+	}
+
+	// update the annotation
+	_, err = kubeClient.GetKubeClient().CoreV1().Pods(pod.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
+	if err != nil {
+		warningLogger.Printf("failed to update pod annotation: %v", err)
 	}
 
 	// patch = append(patch, updateImage(pod.Spec.Containers)...)
@@ -145,28 +166,3 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 
 	return json.Marshal(patch)
 }
-
-// parse image to extract tag
-func parseImage(image string) []string {
-	return strings.Split(image, ":")
-}
-
-// // Generate an array of patch for all containers in the pod
-// func updateImage(containers []corev1.Container) (patch []patchOperation) {
-// 	for container := range containers {
-// 		// find the image associated with the pod
-// 		kubeClient.FindImage(ctx, pod.Namespace, pod.)
-
-// 		var path string
-// 		if containers[container].Image != "debian:1.2.3" {
-// 			path = fmt.Sprintf("/spec/containers/%d/image", container)
-// 		}
-// 		patch = append(patch, patchOperation{
-// 			Op:    "replace",
-// 			Path:  path,
-// 			Value: "debian:1.2.3",
-// 		})
-// 	}
-
-// 	return patch
-// }
