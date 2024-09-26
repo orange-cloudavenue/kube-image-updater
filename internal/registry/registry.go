@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/types/ref"
+	dRegistry "github.com/crazy-max/diun/v4/pkg/registry"
 )
 
 var (
@@ -17,7 +16,8 @@ type (
 	Repository struct {
 		ctx  context.Context
 		repo string
-		c    *regclient.RegClient
+		r    *dRegistry.Client
+		dR   dRegistry.Image
 	}
 )
 
@@ -26,56 +26,37 @@ func New(ctx context.Context, repo string) (*Repository, error) {
 		return nil, ErrRepoIsEmpty
 	}
 
-	// define a regclient with desired options
-	rc := regclient.New(
-		regclient.WithDockerCerts(),
-		regclient.WithDockerCreds(),
-		regclient.WithUserAgent("kimup"),
-	)
+	dR, err := dRegistry.ParseImage(dRegistry.ParseImageOptions{
+		Name: repo,
+	})
+	if err != nil {
+		return nil, ErrInvalidRepo
+	}
 
-	r := &Repository{
+	r, err := dRegistry.New(dRegistry.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	rr := &Repository{
 		ctx:  ctx,
 		repo: repo,
-		c:    rc,
+		r:    r,
+		dR:   dR,
 	}
 
-	ref, err := r.buildRef()
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := rc.Ping(ctx, ref); err != nil {
-		return nil, err
-	}
-
-	return r, nil
-}
-
-// buildRef creates a reference for an image
-func (r *Repository) buildRef() (ref.Ref, error) {
-	// create a reference for an image
-	rF, err := ref.New(r.GetRepo())
-	if err != nil {
-		return ref.Ref{}, err
-	}
-
-	return rF, nil
+	return rr, nil
 }
 
 func (r *Repository) Tags() ([]string, error) {
-	// create a reference for an image
-	rF, err := ref.New(r.GetRepo())
-	if err != nil {
-		return nil, err
-	}
-	defer r.c.Close(r.ctx, rF)
-
-	tL, err := r.c.TagList(r.ctx, rF)
+	tags, err := r.r.Tags(dRegistry.TagsOptions{
+		Image: r.dR,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return tL.GetTags()
+	return tags.List, nil
 }
 
 // GetRepo returns the repository name
