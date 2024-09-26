@@ -42,15 +42,27 @@ type (
 		value bool
 	}
 
+	MapImage struct {
+		aChan aChan
+		value map[string]string
+	}
+
+	MapContainer struct {
+		aChan aChan
+		value map[string]string
+	}
+
 	AnnotationKey string
 )
 
 // AnnotationKey is the key used to store the image in the annotation
 var (
-	KeyAction   AnnotationKey = "kimup.cloudavenue.io" + "/action"
-	KeyTag      AnnotationKey = "kimup.cloudavenue.io" + "/tag"
-	KeyCheckSum AnnotationKey = "kimup.cloudavenue.io" + "/checksum"
-	KeyEnabled  AnnotationKey = "kimup.cloudavenue.io" + "/enabled"
+	KeyAction       AnnotationKey = "kimup.cloudavenue.io" + "/action"
+	KeyTag          AnnotationKey = "kimup.cloudavenue.io" + "/tag"
+	KeyCheckSum     AnnotationKey = "kimup.cloudavenue.io" + "/checksum"
+	KeyEnabled      AnnotationKey = "kimup.cloudavenue.io" + "/enabled"
+	KeyMapImage     AnnotationKey = "kimup.cloudavenue.io" + "/image"
+	KeyMapContainer AnnotationKey = "kimup.cloudavenue.io" + "/container"
 )
 
 type (
@@ -261,6 +273,88 @@ func (a Enabled) Get() bool {
 
 func (a Enabled) Set(enabled bool) {
 	a.aChan.Send(KeyEnabled, strconv.FormatBool(enabled))
+}
+
+// * Images
+
+func (a *Annotation) Images() MapImage {
+	ai := MapImage{
+		aChan: make(aChan),
+	}
+
+	for k, v := range a.annotations {
+		if strings.HasPrefix(k, string(KeyMapImage)) {
+			ai.value[strings.TrimPrefix(k, string(KeyMapImage)+"/")] = v
+		}
+	}
+
+	go func() {
+		for {
+			select {
+			case x := <-ai.aChan:
+				a.annotations[string(KeyMapImage)+"/"+string(x.key)] = x.value
+			case <-a.ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return ai
+}
+
+func (a MapImage) Get(containerImage string) (crdImage string, err error) {
+	if v, ok := a.value[containerImage]; ok {
+		return v, nil
+	}
+
+	return "", fmt.Errorf("image %s not found", containerImage)
+}
+
+func (a MapImage) Set(key, value string) {
+	a.aChan.Send(AnnotationKey(key), value)
+}
+
+func (a MapImage) IsNull() bool {
+	return len(a.value) == 0
+}
+
+// * Containers
+
+func (a *Annotation) Containers() MapContainer {
+	ai := MapContainer{
+		aChan: make(aChan),
+	}
+
+	for k, v := range a.annotations {
+		if strings.HasPrefix(k, string(KeyMapContainer)) {
+			ai.value[strings.TrimPrefix(k, string(KeyMapContainer)+"/")] = v
+		}
+	}
+
+	go func() {
+		for {
+			select {
+			case x := <-ai.aChan:
+				a.annotations[string(KeyMapContainer)+"/"+string(x.key)] = x.value
+			case <-a.ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return ai
+}
+
+func (a MapContainer) Get(containerName string) (imageWithTag string, err error) {
+	if v, ok := a.value[containerName]; ok {
+		return v, nil
+	}
+
+	return "", fmt.Errorf("container %s not found", containerName)
+}
+
+func (a MapContainer) Set(containerName, image, tag string) {
+	a.aChan.Send(AnnotationKey(containerName), image+":"+tag)
 }
 
 // * Generic funcs
