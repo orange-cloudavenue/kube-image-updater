@@ -13,6 +13,7 @@ import (
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/patch"
 )
 
 func serveHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +120,9 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 		return nil, fmt.Errorf("annotation not enabled")
 	}
 
-	var patch []patchOperation
+	// var patch []patchOperation
+	p := patch.NewBuilder()
+
 	infoLogger.Printf("Generate Patch for: %v\n", pod.Name)
 
 	for i, container := range pod.Spec.Containers {
@@ -145,30 +148,17 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 
 		// Set the image to the pod
 		if image.ImageIsEqual(container.Image) {
-			patch = append(patch, patchOperation{
-				Op:    "replace",
-				Path:  fmt.Sprintf("/spec/containers/%d/image", i),
-				Value: image.GetImageWithTag(),
-			})
+			p.AddPatch(patch.OpReplace, fmt.Sprintf("/spec/containers/%d/image", i), image.GetImageWithTag())
 		}
 
-		an.Containers().Set(container.Name, image.GetImageWithTag())
+		// Annotations
+		an.Containers().Set(container.Name, image.Name)
 	}
 
 	// update the annotation
-	patch = append(patch, patchOperation{
-		Op:    "replace",
-		Path:  "/metadata/annotations",
-		Value: pod.GetAnnotations(),
-	})
+	p.AddRawPatches(an.Containers().BuildPatches())
 
-	// _, err = kubeClient.GetKubeClient().CoreV1().Pods(pod.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
-	// if err != nil {
-	// 	warningLogger.Printf("failed to update pod annotation: %v", err)
-	// }
+	debugLogger.Printf("Patch created: %v\n", p)
 
-	// patch = append(patch, updateImage(pod.Spec.Containers)...)
-	debugLogger.Printf("Patch created: %v\n", patch)
-
-	return json.Marshal(patch)
+	return p.Generate()
 }

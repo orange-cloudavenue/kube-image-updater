@@ -38,14 +38,6 @@ var (
 	kubeClient *client.Client
 )
 
-type (
-	patchOperation struct {
-		Op    string      `json:"op"`
-		Path  string      `json:"path"`
-		Value interface{} `json:"value,omitempty"`
-	}
-)
-
 func init() {
 	// init loggers
 	debugLogger = log.New(os.Stderr, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)

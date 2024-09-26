@@ -283,6 +283,7 @@ func (a Enabled) Set(enabled bool) {
 func (a *Annotation) Images() MapImage {
 	ai := MapImage{
 		aChan: make(aChan),
+		value: make(map[string]string),
 	}
 
 	for k, v := range a.annotations {
@@ -332,6 +333,7 @@ func (a MapImage) IsNull() bool {
 func (a *Annotation) Containers() MapContainer {
 	ai := MapContainer{
 		aChan: make(aChan),
+		value: make(map[string]string),
 	}
 
 	for k, v := range a.annotations {
@@ -345,6 +347,7 @@ func (a *Annotation) Containers() MapContainer {
 			select {
 			case x := <-ai.aChan:
 				a.annotations[string(KeyMapContainer)+"/"+string(x.key)] = x.value
+				ai.value[string(x.key)] = x.value
 			case <-a.ctx.Done():
 				return
 			}
@@ -378,8 +381,8 @@ func (a MapContainer) Set(containerName, imageWithTag string) {
 func (a MapContainer) BuildPatches() (patches []patch.Patch) {
 	for k, v := range a.value {
 		patches = append(patches, patch.Patch{
-			Op:    "replace",
-			Path:  "/metadata/annotations/" + string(KeyMapContainer) + "/" + k,
+			Op:    "add",
+			Path:  "/metadata/annotations/" + strings.ReplaceAll(string(KeyMapContainer)+"."+k, "/", "~1"),
 			Value: v,
 		})
 	}
