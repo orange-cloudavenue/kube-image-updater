@@ -130,3 +130,17 @@ func init() {
 func (i *Image) SetStatusTag(tag string) {
 	i.Status.Tag = tag
 }
+
+// GetImageWithTag returns the image name with the tag
+func (i *Image) GetImageWithTag() string {
+	if i.Status.Tag == "" {
+		return i.Spec.Image + ":" + i.Spec.BaseTag
+	}
+
+	return i.Spec.Image + ":" + i.Status.Tag
+}
+
+// GetImageWithoutTag returns the image name without the tag
+func (i *Image) GetImageWithoutTag() string {
+	return i.Spec.Image
+}
