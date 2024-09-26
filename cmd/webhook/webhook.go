@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -111,30 +112,61 @@ func mutate(ctx context.Context, ar *admissionv1.AdmissionReview) *admissionv1.A
 
 // create mutation patch for pod.
 func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
-	// find image in annotations
+	// find annotation enabled
 	an := annotations.New(ctx, pod)
+	if !an.Enabled().Get() {
+		return nil, fmt.Errorf("annotation not enabled")
+	}
 
 	var patch []patchOperation
 	infoLogger.Printf("Generate Patch for: %v\n", pod.Name)
-	patch = append(patch, updateImage(pod.Spec.Containers)...)
+
+	for i, container := range pod.Spec.Containers {
+		// find the image associated with the pod
+		image, err := kubeClient.FindImage(ctx, pod.Namespace, container.Image)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find image: %w", err)
+		}
+
+		// Set the image to the pod
+		var path string
+		if parseImage(pod.Spec.Containers[i].Image)[1] != image.Status.Tag {
+			path = fmt.Sprintf("/spec/containers/%d/image", i)
+		}
+		patch = append(patch, patchOperation{
+			Op:    "replace",
+			Path:  path,
+			Value: image.Status.Tag,
+		})
+	}
+
+	// patch = append(patch, updateImage(pod.Spec.Containers)...)
 	debugLogger.Printf("Patch created: %v\n", patch)
 
 	return json.Marshal(patch)
 }
 
-// Generate an array of patch for all containers in the pod
-func updateImage(containers []corev1.Container) (patch []patchOperation) {
-	for container := range containers {
-		var path string
-		if containers[container].Image != "debian:1.2.3" {
-			path = fmt.Sprintf("/spec/containers/%d/image", container)
-		}
-		patch = append(patch, patchOperation{
-			Op:    "replace",
-			Path:  path,
-			Value: "debian:1.2.3",
-		})
-	}
-
-	return patch
+// parse image to extract tag
+func parseImage(image string) []string {
+	return strings.Split(image, ":")
 }
+
+// // Generate an array of patch for all containers in the pod
+// func updateImage(containers []corev1.Container) (patch []patchOperation) {
+// 	for container := range containers {
+// 		// find the image associated with the pod
+// 		kubeClient.FindImage(ctx, pod.Namespace, pod.)
+
+// 		var path string
+// 		if containers[container].Image != "debian:1.2.3" {
+// 			path = fmt.Sprintf("/spec/containers/%d/image", container)
+// 		}
+// 		patch = append(patch, patchOperation{
+// 			Op:    "replace",
+// 			Path:  path,
+// 			Value: "debian:1.2.3",
+// 		})
+// 	}
+
+// 	return patch
+// }

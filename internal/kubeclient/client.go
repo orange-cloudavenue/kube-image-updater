@@ -173,3 +173,18 @@ func (c *Client) SetImage(ctx context.Context, image v1alpha1.Image) (err error)
 
 	return
 }
+
+// FindImage finds an image in a namespace
+func (c *Client) FindImage(ctx context.Context, namespace, name string) (image v1alpha1.Image, err error) {
+	l, err := c.listImages(ctx, namespace)
+	if err != nil {
+		return image, fmt.Errorf("failed to list images: %w", err)
+	}
+	for _, i := range l.Items {
+		if i.Name == name {
+			return i, nil
+		}
+	}
+
+	return image, fmt.Errorf("image not found")
+}

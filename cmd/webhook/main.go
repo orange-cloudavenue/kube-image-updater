@@ -34,6 +34,8 @@ var (
 	runtimeScheme = runtime.NewScheme()
 	codecs        = serializer.NewCodecFactory(runtimeScheme)
 	deserializer  = codecs.UniversalDeserializer()
+
+	kubeClient *client.Client
 )
 
 type (
@@ -73,7 +75,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	k, err := client.New(homedir + "/.kube/config")
+	kubeClient, err = client.New(homedir + "/.kube/config")
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +87,7 @@ func main() {
 	mux.HandleFunc(webhookPathMutate, serveHandler)
 
 	// create or update the mutatingwebhookconfiguration
-	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, k)
+	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, kubeClient)
 	if err != nil {
 		errorLogger.Fatalf("Failed to create or update the mutating webhook configuration: %v", err)
 	}
