@@ -152,14 +152,20 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 			})
 		}
 
-		an.Containers().Set(container.Name, image.GetImageWithoutTag(), image.GetTag())
+		an.Containers().Set(container.Name, image.GetImageWithTag())
 	}
 
 	// update the annotation
-	_, err = kubeClient.GetKubeClient().CoreV1().Pods(pod.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
-	if err != nil {
-		warningLogger.Printf("failed to update pod annotation: %v", err)
-	}
+	patch = append(patch, patchOperation{
+		Op:    "replace",
+		Path:  "/metadata/annotations",
+		Value: pod.GetAnnotations(),
+	})
+
+	// _, err = kubeClient.GetKubeClient().CoreV1().Pods(pod.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
+	// if err != nil {
+	// 	warningLogger.Printf("failed to update pod annotation: %v", err)
+	// }
 
 	// patch = append(patch, updateImage(pod.Spec.Containers)...)
 	debugLogger.Printf("Patch created: %v\n", patch)

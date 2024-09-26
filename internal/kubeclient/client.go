@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
 type (
@@ -181,7 +182,7 @@ func (c *Client) FindImage(ctx context.Context, namespace, name string) (image v
 		return image, fmt.Errorf("failed to list images: %w", err)
 	}
 	for _, i := range l.Items {
-		if i.GetImageWithoutTag() == name {
+		if i.GetImageWithoutTag() == utils.ImageParser(name).GetImageWithoutTag() {
 			return i, nil
 		}
 	}
