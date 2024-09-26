@@ -144,3 +144,12 @@ func (i *Image) GetImageWithTag() string {
 func (i *Image) GetImageWithoutTag() string {
 	return i.Spec.Image
 }
+
+// Get Tag returns the tag of the image
+func (i *Image) GetTag() string {
+	if i.Status.Tag == "" {
+		return i.Spec.BaseTag
+	}
+
+	return i.Status.Tag
+}
