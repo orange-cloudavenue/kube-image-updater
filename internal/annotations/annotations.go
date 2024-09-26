@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
 type (
@@ -302,16 +304,22 @@ func (a *Annotation) Images() MapImage {
 	return ai
 }
 
-func (a MapImage) Get(containerImage string) (crdImage string, err error) {
-	if v, ok := a.value[containerImage]; ok {
+func (a MapImage) Get(kubernetesImageName string) (crdImage string, err error) {
+	if v, ok := a.value[kubernetesImageName]; ok {
 		return v, nil
 	}
 
-	return "", fmt.Errorf("image %s not found", containerImage)
+	return "", fmt.Errorf("image %s not found", kubernetesImageName)
 }
 
-func (a MapImage) Set(key, value string) {
-	a.aChan.Send(AnnotationKey(key), value)
+// Set associates a Kubernetes image name with a custom resource definition (CRD) image.
+// It sends the mapping to the aChan channel using the specified AnnotationKey.
+//
+// Parameters:
+//   - kubernetesImageName: The name of the Kubernetes image to be set.
+//   - crdImage: The corresponding CRD image that is associated with the Kubernetes image.
+func (a MapImage) Set(kubernetesImageName, crdImage string) {
+	a.aChan.Send(AnnotationKey(kubernetesImageName), crdImage)
 }
 
 func (a MapImage) IsNull() bool {
@@ -353,8 +361,17 @@ func (a MapContainer) Get(containerName string) (imageWithTag string, err error)
 	return "", fmt.Errorf("container %s not found", containerName)
 }
 
-func (a MapContainer) Set(containerName, image, tag string) {
-	a.aChan.Send(AnnotationKey(containerName), image+":"+tag)
+// GetWithParser returns the custom image parser of the specified container.
+func (a MapContainer) GetWithParser(containerName string) (imageWithTag utils.ImageTag, err error) {
+	if v, ok := a.value[containerName]; ok {
+		return utils.ImageParser(v), nil
+	}
+
+	return utils.ImageTag{}, fmt.Errorf("container %s not found", containerName)
+}
+
+func (a MapContainer) Set(containerName, imageWithTag string) {
+	a.aChan.Send(AnnotationKey(containerName), imageWithTag)
 }
 
 // * Generic funcs
