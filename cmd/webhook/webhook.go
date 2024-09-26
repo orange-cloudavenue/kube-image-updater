@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,8 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 )
 
 func serveHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +45,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	} else {
-		admissionResponse = mutate(&ar)
+		admissionResponse = mutate(r.Context(), &ar)
 	}
 
 	admissionReview := admissionv1.AdmissionReview{
@@ -71,7 +74,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // func mutate the request
-func mutate(ar *admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
+func mutate(ctx context.Context, ar *admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
 	req := ar.Request
 	var pod corev1.Pod
 	if err := json.Unmarshal(req.Object.Raw, &pod); err != nil {
@@ -87,7 +90,7 @@ func mutate(ar *admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
 		req.Kind, req.Namespace, req.Name, pod.Name, req.UID, req.Operation, req.UserInfo)
 
 	// create patch
-	patchBytes, err := createPatch(&pod)
+	patchBytes, err := createPatch(ctx, &pod)
 	if err != nil {
 		return &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
@@ -107,7 +110,10 @@ func mutate(ar *admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
 }
 
 // create mutation patch for pod.
-func createPatch(pod *corev1.Pod) ([]byte, error) {
+func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
+	// find image in annotations
+	an := annotations.New(ctx, pod)
+
 	var patch []patchOperation
 	infoLogger.Printf("Generate Patch for: %v\n", pod.Name)
 	patch = append(patch, updateImage(pod.Spec.Containers)...)
