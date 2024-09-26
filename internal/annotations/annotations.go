@@ -5,6 +5,7 @@ import (
 	"crypto/md5" //nolint:gosec
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -36,6 +37,11 @@ type (
 		value string
 	}
 
+	Enabled struct {
+		aChan aChan
+		value bool
+	}
+
 	AnnotationKey string
 )
 
@@ -44,6 +50,7 @@ var (
 	KeyAction   AnnotationKey = "kimup.cloudavenue.io" + "/action"
 	KeyTag      AnnotationKey = "kimup.cloudavenue.io" + "/tag"
 	KeyCheckSum AnnotationKey = "kimup.cloudavenue.io" + "/checksum"
+	KeyEnabled  AnnotationKey = "kimup.cloudavenue.io" + "/enabled"
 )
 
 type (
@@ -220,6 +227,40 @@ func (a *CheckSum) IsEqual(object interface{}) (bool, error) {
 	}
 
 	return a.value == x, nil
+}
+
+// * Enabled
+
+func (a *Annotation) Enabled() Enabled {
+	ae := Enabled{
+		aChan: make(aChan),
+	}
+
+	if v, ok := a.annotations[string(KeyEnabled)]; ok {
+		boolValue, _ := strconv.ParseBool(v)
+		ae.value = boolValue
+	}
+
+	go func() {
+		for {
+			select {
+			case x := <-ae.aChan:
+				a.annotations[string(x.key)] = x.value
+			case <-a.ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return ae
+}
+
+func (a Enabled) Get() bool {
+	return a.value
+}
+
+func (a Enabled) Set(enabled bool) {
+	a.aChan.Send(KeyEnabled, strconv.FormatBool(enabled))
 }
 
 // * Generic funcs
