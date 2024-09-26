@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -152,4 +154,22 @@ func (i *Image) GetTag() string {
 	}
 
 	return i.Status.Tag
+}
+
+// ImageIsEqual checks if the provided image string is equal to the image
+// specified in the Image struct. The provided image string can be in the
+// format of "image:tag" or just "image". This function compares only the
+// image name, ignoring any tags. It returns true if the image names are
+// equal, and false otherwise.
+func (i *Image) ImageIsEqual(image string) bool {
+	// Define if image has a tag
+	// image possible format are:
+	// - image:tag
+	// - image
+
+	// Split image and tag
+	imageSplit := strings.Split(image, ":")
+	imageName := imageSplit[0]
+
+	return i.Spec.Image == imageName
 }
