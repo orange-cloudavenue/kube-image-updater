@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/orange-cloudavenue/kube-image-updater/internal/patch"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
@@ -372,6 +373,18 @@ func (a MapContainer) GetWithParser(containerName string) (imageWithTag utils.Im
 
 func (a MapContainer) Set(containerName, imageWithTag string) {
 	a.aChan.Send(AnnotationKey(containerName), imageWithTag)
+}
+
+func (a MapContainer) BuildPatches() (patches []patch.Patch) {
+	for k, v := range a.value {
+		patches = append(patches, patch.Patch{
+			Op:    "replace",
+			Path:  "/metadata/annotations/" + string(KeyMapContainer) + "/" + k,
+			Value: v,
+		})
+	}
+
+	return
 }
 
 // * Generic funcs
