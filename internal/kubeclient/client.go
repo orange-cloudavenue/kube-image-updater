@@ -181,7 +181,7 @@ func (c *Client) FindImage(ctx context.Context, namespace, name string) (image v
 		return image, fmt.Errorf("failed to list images: %w", err)
 	}
 	for _, i := range l.Items {
-		if i.Name == name {
+		if i.GetImageWithoutTag() == name {
 			return i, nil
 		}
 	}
