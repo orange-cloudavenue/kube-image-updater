@@ -1,0 +1,3 @@
+```release-note:bug
+`webhook` - Fix kube client apply for mutating manifest.
+```
