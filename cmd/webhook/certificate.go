@@ -90,6 +90,7 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 	// print CA certificate if insideCluster is false
 	if !insideCluster {
 		writeNewCA(caPEM, manifestWebhookPath)
+		time.Sleep(2 * time.Second)
 		applyManifest(manifestWebhookPath)
 
 		debugLogger.Printf("CA certificate Encoded: %s", base64.StdEncoding.EncodeToString(caPEM.Bytes()))
