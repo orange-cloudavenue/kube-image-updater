@@ -39,7 +39,6 @@ repo_name: orange-cloudavenue/kube-image-updater
 plugins:
   - search
   - mkdocs-video
-  - render_swagger
 
 nav:
   - Overview: "index.md"

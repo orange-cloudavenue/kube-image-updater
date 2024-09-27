@@ -1,0 +1,69 @@
+{
+	"name": "Go",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			// Update the VARIANT arg to pick a version of Go: 1, 1.18, 1.17
+			// Append -bullseye or -buster to pin to an OS version.
+			// Use -bullseye variants on local arm64/Apple Silicon.
+			"VARIANT": "1-bullseye"
+		}
+	},
+	"runArgs": [
+		"--cap-add=SYS_PTRACE",
+		"--security-opt",
+		"seccomp=unconfined"
+	],
+	"customizations": {
+		"vscode": {
+			// Set *default* container specific settings.json values on container create.
+			"settings": {
+				"go.toolsManagement.checkForUpdates": "local",
+				"go.useLanguageServer": true,
+				"go.gopath": "/go"
+			},
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"aaron-bond.better-comments",
+				"usernamehw.errorlens",
+				"mhutchie.git-graph",
+				"donjayamanne.githistory",
+				"golang.go",
+				"4ops.terraform"
+			]
+		}
+	},
+	"containerEnv": {
+		"HOME": "/home/vscode",
+		// Username
+		"CLOUDAVENUE_USER": "${localEnv:CLOUDAVENUE_USER}",
+		// Password
+		"CLOUDAVENUE_PASSWORD": "${localEnv:CLOUDAVENUE_PASSWORD}",
+		// Organization
+		"CLOUDAVENUE_ORG": "${localEnv:CLOUDAVENUE_ORG}",
+		// Netbackup user
+		"NETBACKUP_USER": "${localEnv:NETBACKUP_USER}",
+		// Netbackup password
+		"NETBACKUP_PASSWORD": "${localEnv:NETBACKUP_PASSWORD}"
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [
+		8000
+	],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "pip install mkdocs mkdocs-material pymdown-extensions mkdocs-video",
+	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode",
+	"updateRemoteUserUID": true,
+	"features": {
+		"github-cli": "latest",
+		"ghcr.io/guiyomh/features/golangci-lint:0": {},
+		"ghcr.io/meaningful-ooo/devcontainer-features/fish": {},
+		"ghcr.io/devcontainers/features/python:1": {
+			"installTools": false
+		},
+		"ghcr.io/gvatsal60/dev-container-features/pre-commit:1": {}
+	},
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+	"workspaceFolder": "/workspace"
+}
