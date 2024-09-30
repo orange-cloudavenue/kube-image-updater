@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,13 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/patch"
 )
 
+// func serveHandler
 func serveHandler(w http.ResponseWriter, r *http.Request) {
+	timer := prometheus.NewTimer(httpDuration)
+	defer timer.ObserveDuration()
+	// increment the totalRequests counter
+	totalRequests.Inc()
+
 	var body []byte
 	if r.Body != nil {
 		if data, err := io.ReadAll(r.Body); err == nil {
@@ -24,6 +31,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(body) == 0 {
+		totalHTTPErrors.Inc()
 		warningLogger.Println("empty body")
 		http.Error(w, "empty body", http.StatusBadRequest)
 		return
@@ -32,6 +40,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 	// verify the content type is accurate
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
+		totalHTTPErrors.Inc()
 		warningLogger.Printf("Content-Type=%s, expect application/json", contentType)
 		http.Error(w, "invalid Content-Type, expect `application/json`", http.StatusUnsupportedMediaType)
 		return
@@ -40,6 +49,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 	var admissionResponse *admissionv1.AdmissionResponse
 	ar := admissionv1.AdmissionReview{}
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
+		totalHTTPErrors.Inc()
 		warningLogger.Printf("Can't decode body: %v", err)
 		admissionResponse = &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
@@ -65,11 +75,13 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(admissionReview)
 	if err != nil {
+		totalHTTPErrors.Inc()
 		warningLogger.Printf("Can't encode response: %v", err)
 		http.Error(w, fmt.Sprintf("could not encode response: %v", err), http.StatusInternalServerError)
 	}
 	infoLogger.Printf("Ready to write response ...")
 	if _, err := w.Write(resp); err != nil {
+		totalHTTPErrors.Inc()
 		warningLogger.Printf("Can't write response: %v", err)
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}
