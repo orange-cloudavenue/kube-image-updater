@@ -10,49 +10,55 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
-	// Prometheus metrics for ALL HTTP requests
-	HTTPRequestsTotal = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "http_requests_total",
-		Help: "The total number of handled HTTP requests.",
+// NewCounter creates a new Prometheus counter
+// The NewCounter use a function to directly register the counter
+// The function returns a prometheus.Counter
+//
+// Name: The name of the counter
+// Help: The description help text of the counter
+func NewCounter(name, help string) prometheus.Counter {
+	return promauto.NewCounter(prometheus.CounterOpts{
+		Name: name,
+		Help: help,
 	})
-
-	// Prometheus metrics for ALL HTTP errors
-	HTTPErrorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "http_errors_total",
-		Help: "The total number of handled HTTP errors.",
-	})
-
-	// Duration of HTTP requests in seconds
-	MyHTTPDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: "my_http_response_time_seconds",
-		Help: "The duration in seconds of HTTP requests.",
-	})
-)
-
-func RegisterMetrics() (err error) {
-	// Register the Prometheus metrics with the global prometheus registry
-	if err = prometheus.Register(HTTPRequestsTotal); err != nil {
-		return err
-	}
-	if err = prometheus.Register(HTTPErrorsTotal); err != nil {
-		return err
-	}
-	if err = prometheus.Register(MyHTTPDuration); err != nil {
-		log.Fatalf("Failed to register metrics: %v", MyHTTPDuration)
-		return err
-	}
-	return nil
 }
 
+// NewGauge creates a new Prometheus gauge
+// The NewGauge use a function to directly register the gauge
+// The function returns a prometheus.Gauge
+//
+// Name: The name of the gauge
+// Help: The description help text of the gauge
+func NewGauge(name, help string) prometheus.Gauge {
+	return promauto.NewGauge(prometheus.GaugeOpts{
+		Name: name,
+		Help: help,
+	})
+}
+
+// NewHistogram creates a new Prometheus histogram
+// The NewHistogram use a function to directly register the histogram
+// The function returns a prometheus.Histogram
+//
+// Name: The name of the histogram
+// Help: The description help text of the histogram
+func NewHistogram(name, help string) prometheus.Histogram {
+	return promauto.NewHistogram(prometheus.HistogramOpts{
+		Name: name,
+		Help: help,
+	})
+}
+
+// ServeProm starts a Prometheus metrics server
 func ServeProm(port, path string) error {
 	var err error
 	// Define Metrics server
-	http.Handle(path, promhttp.Handler())
+	mux := http.NewServeMux()
+	mux.Handle(path, promhttp.Handler())
 
 	sm := &http.Server{
 		Addr:        port,
-		Handler:     promhttp.Handler(),
+		Handler:     mux,
 		ReadTimeout: 10 * time.Second,
 	}
 

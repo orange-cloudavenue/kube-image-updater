@@ -14,16 +14,16 @@ import (
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
-	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/patch"
 )
 
 // func serveHandler
 func serveHandler(w http.ResponseWriter, r *http.Request) {
-	timer := prometheus.NewTimer(metrics.MyHTTPDuration)
+	// start the timer
+	timer := prometheus.NewTimer(promHTTPDuration)
 	defer timer.ObserveDuration()
 	// increment the totalRequests counter
-	metrics.HTTPRequestsTotal.Inc()
+	promHTTPRequestsTotal.Inc()
 
 	var body []byte
 	if r.Body != nil {
@@ -32,7 +32,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(body) == 0 {
-		metrics.HTTPErrorsTotal.Inc()
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Println("empty body")
 		http.Error(w, "empty body", http.StatusBadRequest)
 		return
@@ -41,7 +41,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 	// verify the content type is accurate
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
-		metrics.HTTPErrorsTotal.Inc()
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Content-Type=%s, expect application/json", contentType)
 		http.Error(w, "invalid Content-Type, expect `application/json`", http.StatusUnsupportedMediaType)
 		return
@@ -50,7 +50,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 	var admissionResponse *admissionv1.AdmissionResponse
 	ar := admissionv1.AdmissionReview{}
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
-		metrics.HTTPErrorsTotal.Inc()
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Can't decode body: %v", err)
 		admissionResponse = &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
@@ -76,13 +76,13 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(admissionReview)
 	if err != nil {
-		metrics.HTTPErrorsTotal.Inc()
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Can't encode response: %v", err)
 		http.Error(w, fmt.Sprintf("could not encode response: %v", err), http.StatusInternalServerError)
 	}
 	infoLogger.Printf("Ready to write response ...")
 	if _, err := w.Write(resp); err != nil {
-		metrics.HTTPErrorsTotal.Inc()
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Can't write response: %v", err)
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}

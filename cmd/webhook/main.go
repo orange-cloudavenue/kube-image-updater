@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
@@ -41,6 +42,11 @@ var (
 
 	kubeClient          *client.Client
 	manifestWebhookPath string = "./config/manifests/mutatingWebhookConfiguration.yaml"
+
+	// Prometheus metrics
+	promHTTPRequestsTotal prometheus.Counter   = metrics.NewCounter("http_requests_total", "The total number of handled HTTP requests.")
+	promHTTPErrorsTotal   prometheus.Counter   = metrics.NewCounter("http_errors_total", "The total number of handled HTTP errors.")
+	promHTTPDuration      prometheus.Histogram = metrics.NewHistogram("http_response_time_seconds", "The duration in seconds of HTTP requests.")
 )
 
 func init() {
@@ -53,10 +59,6 @@ func init() {
 	// webhook server running namespace (default to "default")
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
-	}
-
-	if err := metrics.RegisterMetrics(); err != nil {
-		warningLogger.Fatalf("Failed to register metrics: %v", err)
 	}
 }
 
