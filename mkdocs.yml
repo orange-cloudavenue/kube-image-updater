@@ -43,8 +43,11 @@ nav:
   - Getting Started:
     - Installation: install.md
     - Howto: howto.md
+<<<<<<< HEAD
   - Custom Resources:
     - Image: crd/image.md
+=======
+>>>>>>> e2a5d09 (chore: Add Doc (#17))
 
 markdown_extensions:
   # Python Markdown
