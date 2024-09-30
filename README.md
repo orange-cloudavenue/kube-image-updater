@@ -32,7 +32,27 @@ Useful links:
 
 To quickly get started with the Kube Image Updater, you can use the following example:
 
-TODO
+```yaml
+apiVersion: kimup.cloudavenue.io/v1alpha1
+kind: Image
+metadata:
+  labels:
+    app.kubernetes.io/name: kube-image-updater
+    app.kubernetes.io/managed-by: kustomize
+  name: demo
+  namespace: default
+spec:
+  image: ghcr.io/orange-cloudavenue/kube-image-updater
+  baseTag: v0.0.19
+  triggers:
+    - type: crontab
+      value: "00 00 */12 * * *"
+  rules:
+    - name: Automatic update semver minor
+      type: semver-minor
+      actions:
+        - type: apply
+```
 
 ## Contributing
 

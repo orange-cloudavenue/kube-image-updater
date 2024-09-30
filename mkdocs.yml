@@ -42,6 +42,9 @@ plugins:
 
 nav:
   - Overview: "index.md"
+  - Getting Started:
+    - Installation: install.md
+    - Howto: howto.md
 
 markdown_extensions:
   # Python Markdown
@@ -75,7 +78,6 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
-
 
 extra:
   social:
