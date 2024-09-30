@@ -14,13 +14,14 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/rules"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers/crontab"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
 func initScheduler(k *kubeclient.Client) {
 	// Start Crontab client
 	crontab.New(context.Background())
 
-	event.On(triggers.RefreshImage.String(), event.ListenerFunc(func(e event.Event) error {
+	event.On(triggers.RefreshImage.String(), event.ListenerFunc(func(e event.Event) (err error) {
 		retryErr := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			// TODO: implement image refresh
 			log.Infof("Refreshing image %s in namespace %s", e.Data()["image"], e.Data()["namespace"])
@@ -39,7 +40,32 @@ func initScheduler(k *kubeclient.Client) {
 			// an := annotations.New(ctx, &image)
 			// TODO add last refresh annotation
 
-			re, err := registry.New(ctx, image.Spec.Image)
+			var auths kubeclient.K8sDockerRegistrySecretData
+
+			if image.Spec.ImagePullSecrets != nil {
+				auths, err = k.GetPullSecretsForImage(ctx, image)
+				if err != nil {
+					return err
+				}
+			}
+
+			i := utils.ImageParser(image.Spec.Image)
+
+			re, err := registry.New(ctx, image.Spec.Image, registry.Settings{
+				InsecureTLS: image.Spec.InsecureSkipTLSVerify,
+				Username: func() string {
+					if v, ok := auths.Auths[i.GetRegistry()]; ok {
+						return v.Username
+					}
+					return ""
+				}(),
+				Password: func() string {
+					if v, ok := auths.Auths[i.GetRegistry()]; ok {
+						return v.Password
+					}
+					return ""
+				}(),
+			})
 			if err != nil {
 				return err
 			}

@@ -43,6 +43,11 @@ type (
 		ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 		// +kubebuilder:validation:Optional
+		// +kubebuilder:default:=false
+		// +kubebuilder:example:=true
+		InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
+
+		// +kubebuilder:validation:Optional
 		// +kubebuilder:default:="latest"
 		// +kubebuilder:example:="v1.2.0"
 		BaseTag string `json:"baseTag,omitempty"`

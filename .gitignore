@@ -3,3 +3,4 @@ bin/
 dist/
 config/manifests/mutatingWebhookConfiguration.yaml
 site/
+**/charts/**

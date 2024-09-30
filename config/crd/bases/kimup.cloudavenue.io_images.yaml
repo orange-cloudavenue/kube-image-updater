@@ -70,6 +70,10 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              insecureSkipTLSVerify:
+                default: false
+                example: true
+                type: boolean
               rules:
                 items:
                   description: ImageRule

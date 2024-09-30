@@ -48,3 +48,12 @@ func (i ImageTag) GetImageWithTag() string {
 func (i ImageTag) GetTag() string {
 	return i.tag
 }
+
+// GetRegistry returns the registry
+func (i ImageTag) GetRegistry() string {
+	imageParsed := strings.Split(i.image, "/")
+	if len(imageParsed) > 1 {
+		return imageParsed[0]
+	}
+	return ""
+}

@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.0
+	github.com/containers/image/v5 v5.30.1
 	github.com/crazy-max/diun/v4 v4.28.0
 	github.com/gookit/event v1.1.2
 	github.com/onsi/ginkgo/v2 v2.20.2
@@ -11,6 +12,7 @@ require (
 	github.com/reugn/go-quartz v0.12.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
+	github.com/thanhpk/randstr v1.0.6
 	k8s.io/api v0.31.1
 	k8s.io/apimachinery v0.31.1
 	k8s.io/client-go v0.31.1
@@ -25,7 +27,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/containers/image/v5 v5.30.1 // indirect
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
 	github.com/containers/ocicrypt v1.1.9 // indirect
 	github.com/containers/storage v1.53.0 // indirect

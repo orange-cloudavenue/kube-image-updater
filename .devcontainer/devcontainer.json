@@ -62,7 +62,9 @@
 		"ghcr.io/devcontainers/features/python:1": {
 			"installTools": false
 		},
-		"ghcr.io/gvatsal60/dev-container-features/pre-commit:1": {}
+		"ghcr.io/gvatsal60/dev-container-features/pre-commit:1": {},
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/rio/features/kustomize:1": {}
 	},
 	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
 	"workspaceFolder": "/workspace"

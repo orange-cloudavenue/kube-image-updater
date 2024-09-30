@@ -2,9 +2,13 @@ package kubeclient
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"strings"
 
+	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -155,23 +159,6 @@ func (c *Client) SetImage(ctx context.Context, image v1alpha1.Image) (err error)
 		return fmt.Errorf("failed to update resource: %w", err)
 	}
 
-	// xImage := v1alpha1.Image{}
-	// if err := runtime.DefaultUnstructuredConverter.
-	// 	FromUnstructured(x.UnstructuredContent(), &xImage); err != nil {
-	// 	return fmt.Errorf("failed to convert resource: %w", err)
-	// }
-
-	// xImage.Status = image.Status
-	// xUnstructedImage, err := runtime.DefaultUnstructuredConverter.
-	// 	ToUnstructured(&image)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to convert resource: %w", err)
-	// }
-
-	// if _, err := c.cImage().Namespace(image.Namespace).UpdateStatus(ctx, &unstructured.Unstructured{Object: xUnstructedImage}, metav1.UpdateOptions{}); err != nil {
-	// 	return fmt.Errorf("failed to update status: %w", err)
-	// }
-
 	return
 }
 
@@ -188,4 +175,50 @@ func (c *Client) FindImage(ctx context.Context, namespace, name string) (image v
 	}
 
 	return image, fmt.Errorf("image not found")
+}
+
+type K8sDockerRegistrySecretData struct {
+	Auths map[string]K8sDockerRegistrySecret `json:"auths"`
+}
+
+type K8sDockerRegistrySecret struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email,omitempty"`
+	Auth     string `json:"auth"`
+}
+
+func (c *Client) GetPullSecretsForImage(ctx context.Context, image v1alpha1.Image) (auths K8sDockerRegistrySecretData, err error) {
+	auths.Auths = make(map[string]K8sDockerRegistrySecret)
+
+	for _, ip := range image.Spec.ImagePullSecrets {
+		secret, err := c.GetKubeClient().CoreV1().Secrets(image.Namespace).Get(ctx, ip.Name, metav1.GetOptions{})
+		if err != nil {
+			continue
+		}
+
+		if secret.Type != v1.SecretTypeDockerConfigJson {
+			continue
+		}
+
+		auth := K8sDockerRegistrySecretData{}
+		if err := json.Unmarshal(secret.Data[v1.DockerConfigJsonKey], &auth); err != nil {
+			return auths, fmt.Errorf("failed to unmarshal secret: %w", err)
+		}
+
+		for k, v := range auth.Auths {
+			if v.Username == "" || v.Password == "" {
+				continue
+			}
+
+			for _, i := range []string{"https://", "http://"} {
+				k = strings.TrimPrefix(k, i)
+			}
+
+			log.Debugf("Found auth for %s", k)
+			auths.Auths[k] = v
+		}
+	}
+
+	return auths, nil
 }
