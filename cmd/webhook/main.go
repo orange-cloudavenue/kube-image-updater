@@ -11,12 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 )
 
 var (
@@ -32,7 +31,8 @@ var (
 	webhookPathMutate  string = "/mutate"
 	webhookPort        string = ":8443"
 	webhookBase               = webhookServiceName + "." + webhookNamespace
-	// webhookMetricsPath string = "/metrics"
+
+	webhookMetricsPath string = "/metrics"
 	webhookMetricsPort string = ":9080"
 
 	runtimeScheme = runtime.NewScheme()
@@ -41,21 +41,6 @@ var (
 
 	kubeClient          *client.Client
 	manifestWebhookPath string = "./config/manifests/mutatingWebhookConfiguration.yaml"
-
-	// Prometheus metrics for requests
-	totalRequests = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "http_requests_total",
-		Help: "The total number of handled HTTP requests.",
-	})
-
-	// Prometheus metrics for errors
-	totalErrors = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "http_errors_total",
-		Help: "The total number of handled HTTP errors.",
-	})
-
-	// Prometheus metrics
-
 )
 
 func init() {
@@ -69,11 +54,7 @@ func init() {
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
 	}
-
-	// prometheus metrics
-	prometheus.Register(totalHTTPRequests)
-	prometheus.Register(totalHTTPErrors)
-	prometheus.Register(httpDuration)
+	metrics.RegisterMetrics()
 }
 
 // Start http server for webhook
@@ -129,20 +110,9 @@ func main() {
 		}
 	}()
 
-	// Define Metrics server
-	sm := &http.Server{
-		Addr:        webhookMetricsPort,
-		Handler:     promhttp.Handler(),
-		ReadTimeout: 10 * time.Second,
+	if err := metrics.ServeProm(webhookMetricsPort, webhookMetricsPath); err != nil {
+		errorLogger.Fatalf("Failed to start metrics server: %v", err)
 	}
-
-	// Start the metrics server
-	go func() {
-		infoLogger.Printf("Starting metrics server on %s", sm.Addr)
-		if err = sm.ListenAndServe(); err != nil {
-			log.Fatalf("Failed to start metrics server: %v", err)
-		}
-	}()
 
 	// listening OS shutdown singal
 	signalChan := make(chan os.Signal, 1)
