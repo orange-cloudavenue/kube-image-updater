@@ -54,7 +54,10 @@ func init() {
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
 	}
-	metrics.RegisterMetrics()
+
+	if err := metrics.RegisterMetrics(); err != nil {
+		warningLogger.Fatalf("Failed to register metrics: %v", err)
+	}
 }
 
 // Start http server for webhook

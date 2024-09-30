@@ -24,17 +24,25 @@ var (
 	})
 
 	// Duration of HTTP requests in seconds
-	HTTPDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: "http_response_time_seconds",
+	MyHTTPDuration = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name: "my_http_response_time_seconds",
 		Help: "The duration in seconds of HTTP requests.",
 	})
 )
 
-func RegisterMetrics() {
+func RegisterMetrics() (err error) {
 	// Register the Prometheus metrics with the global prometheus registry
-	prometheus.MustRegister(HTTPRequestsTotal)
-	prometheus.MustRegister(HTTPErrorsTotal)
-	prometheus.MustRegister(HTTPDuration)
+	if err = prometheus.Register(HTTPRequestsTotal); err != nil {
+		return err
+	}
+	if err = prometheus.Register(HTTPErrorsTotal); err != nil {
+		return err
+	}
+	if err = prometheus.Register(MyHTTPDuration); err != nil {
+		log.Fatalf("Failed to register metrics: %v", MyHTTPDuration)
+		return err
+	}
+	return nil
 }
 
 func ServeProm(port, path string) error {

@@ -20,7 +20,7 @@ import (
 
 // func serveHandler
 func serveHandler(w http.ResponseWriter, r *http.Request) {
-	timer := prometheus.NewTimer(metrics.HTTPDuration)
+	timer := prometheus.NewTimer(metrics.MyHTTPDuration)
 	defer timer.ObserveDuration()
 	// increment the totalRequests counter
 	metrics.HTTPRequestsTotal.Inc()
