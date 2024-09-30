@@ -66,6 +66,11 @@ func init() {
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
 	}
+
+	// prometheus metrics
+	prometheus.Register(totalHTTPRequests)
+	prometheus.Register(totalHTTPErrors)
+	prometheus.Register(httpDuration)
 }
 
 // Start http server for webhook
