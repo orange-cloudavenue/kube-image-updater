@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/containers/image/v5/types"
 	dRegistry "github.com/crazy-max/diun/v4/pkg/registry"
 )
 
@@ -19,9 +20,15 @@ type (
 		r    *dRegistry.Client
 		dR   dRegistry.Image
 	}
+
+	Settings struct {
+		InsecureTLS bool
+		Username    string
+		Password    string
+	}
 )
 
-func New(ctx context.Context, repo string) (*Repository, error) {
+func New(ctx context.Context, repo string, settings Settings) (*Repository, error) {
 	if repo == "" {
 		return nil, ErrRepoIsEmpty
 	}
@@ -33,7 +40,14 @@ func New(ctx context.Context, repo string) (*Repository, error) {
 		return nil, ErrInvalidRepo
 	}
 
-	r, err := dRegistry.New(dRegistry.Options{})
+	r, err := dRegistry.New(dRegistry.Options{
+		Auth: types.DockerAuthConfig{
+			Username: settings.Username,
+			Password: settings.Password,
+		},
+		InsecureTLS: settings.InsecureTLS,
+		UserAgent:   "kube-image-updater",
+	})
 	if err != nil {
 		return nil, err
 	}

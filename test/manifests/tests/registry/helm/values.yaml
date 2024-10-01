@@ -1,0 +1,3 @@
+replicaCount: 1
+secrets:
+  htpasswd: myuser:$2y$05$1Pw2wBr/9gGtXMB7ZfuDvO7jiBZL6/quR5lk2gw3qDKcEN4wc4XjW

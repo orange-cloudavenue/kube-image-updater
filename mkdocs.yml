@@ -34,8 +34,6 @@ theme:
 repo_url: https://github.com/orange-cloudavenue/kube-image-updater
 repo_name: orange-cloudavenue/kube-image-updater
 
-
-
 plugins:
   - search
   - mkdocs-video
@@ -45,6 +43,8 @@ nav:
   - Getting Started:
     - Installation: install.md
     - Howto: howto.md
+  - Custom Resources:
+    - Image: crd/image.md
 
 markdown_extensions:
   # Python Markdown
