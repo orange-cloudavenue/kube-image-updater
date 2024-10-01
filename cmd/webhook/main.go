@@ -66,7 +66,6 @@ func init() {
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
 	}
-	metrics.RegisterMetrics()
 }
 
 // Start http server for webhook
