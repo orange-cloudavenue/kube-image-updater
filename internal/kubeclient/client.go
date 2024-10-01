@@ -93,6 +93,28 @@ func (c *Client) cImage() dynamic.NamespaceableResourceInterface {
 	})
 }
 
+type UnstructuredFunc interface {
+	UnstructuredContent() map[string]interface{}
+}
+
+func decodeUnstructured[T any](v UnstructuredFunc) (t T, err error) {
+	if err := runtime.DefaultUnstructuredConverter.
+		FromUnstructured(v.UnstructuredContent(), &t); err != nil {
+		return t, fmt.Errorf("failed to convert resource: %w", err)
+	}
+
+	return
+}
+
+func encodeUnstructured[T any](t T) (*unstructured.Unstructured, error) {
+	x, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&t)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert resource: %w", err)
+	}
+
+	return &unstructured.Unstructured{Object: x}, nil
+}
+
 func (c *Client) listImages(ctx context.Context, namespace string) (list v1alpha1.ImageList, err error) {
 	var v *unstructured.UnstructuredList
 
@@ -105,8 +127,8 @@ func (c *Client) listImages(ctx context.Context, namespace string) (list v1alpha
 		return list, fmt.Errorf("failed to list resources: %w", err)
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.
-		FromUnstructured(v.UnstructuredContent(), &list); err != nil {
+	list, err = decodeUnstructured[v1alpha1.ImageList](v)
+	if err != nil {
 		return list, fmt.Errorf("failed to convert resource: %w", err)
 	}
 
@@ -138,8 +160,8 @@ func (c *Client) GetImage(ctx context.Context, namespace, name string) (image v1
 		return image, fmt.Errorf("failed to get resource: %w", err)
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.
-		FromUnstructured(v.UnstructuredContent(), &image); err != nil {
+	image, err = decodeUnstructured[v1alpha1.Image](v)
+	if err != nil {
 		return image, fmt.Errorf("failed to convert resource: %w", err)
 	}
 
@@ -148,13 +170,12 @@ func (c *Client) GetImage(ctx context.Context, namespace, name string) (image v1
 
 // SetImage sets an image in a namespace
 func (c *Client) SetImage(ctx context.Context, image v1alpha1.Image) (err error) {
-	unstructedImage, err := runtime.DefaultUnstructuredConverter.
-		ToUnstructured(&image)
+	unstructedImage, err := encodeUnstructured(image)
 	if err != nil {
 		return fmt.Errorf("failed to convert resource: %w", err)
 	}
 
-	_, err = c.cImage().Namespace(image.Namespace).Update(ctx, &unstructured.Unstructured{Object: unstructedImage}, metav1.UpdateOptions{})
+	_, err = c.cImage().Namespace(image.Namespace).Update(ctx, unstructedImage, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update resource: %w", err)
 	}

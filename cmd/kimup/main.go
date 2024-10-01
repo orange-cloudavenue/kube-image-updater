@@ -13,7 +13,6 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
-	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers/crontab"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
@@ -25,6 +24,7 @@ var (
 
 func init() {
 	flag.String("loglevel", "info", "log level (debug, info, warn, error, fatal, panic)")
+	// TODO add namespace scope
 	flag.Parse()
 
 	log.SetLevel(utils.ParseLogLevel(flag.Lookup("loglevel").Value.String()))
@@ -42,76 +42,79 @@ func main() {
 		log.Panicf("Error creating kubeclient: %v", err)
 	}
 
-	initScheduler(k)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	initScheduler(ctx, k)
 
 	go func() {
+		x, err := k.WatchEventsImage(ctx)
+		if err != nil {
+			log.Panicf("Error watching events: %v", err)
+		}
+
 		for {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
+			select {
+			case <-ctx.Done():
+				return
+			case event, ok := <-x:
+				if !ok {
+					return
+				}
 
-			images, err := k.ListAllImages(ctx)
-			if err != nil {
-				log.Errorf("Error listing images: %v", err)
-				continue
-			}
+				ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+				defer cancel()
 
-			for _, image := range images.Items {
-				an := annotations.New(ctx, &image)
-				switch an.Action().Get() {
-				case annotations.ActionReload:
-					// * Here is only if the yaml has been updated and the operator has detected it
+				an := annotations.New(ctx, event.Value)
 
-					log.Infof("Image configuration %s in namespace %s has changed", image.Name, image.Namespace)
-
-					for _, trigger := range image.Spec.Triggers {
-						switch trigger.Type {
-						case triggers.Crontab:
-							if ok, err := crontab.IsExistingJob(crontab.BuildKey(image.Namespace, image.Name)); err != nil || ok {
-								if err := crontab.RemoveJob(crontab.BuildKey(image.Namespace, image.Name)); err != nil {
-									log.Errorf("Error removing crontab: %v", err)
-								}
-							}
-						case triggers.Webhook:
-							log.Info("Webhook trigger not implemented yet")
-						}
-					}
-
-					// Remove the annotation annotations.AnnotationActionKey in the map[string]string
+				switch event.Type {
+				case "ADDED":
+					// Clean old action
 					an.Remove(annotations.KeyAction)
 
-				case annotations.ActionRefresh:
-					// * Here is only if the image has annotations.ActionRefresh
-					// Trigger the refresh of the image is deferred to the end of the loop to avoid Update kube API call
-					log.Infof("[Fire] Annotation trigger refresh for image %s in namespace %s", image.Name, image.Namespace)
-					_, err := triggers.Trigger(triggers.RefreshImage, image.Namespace, image.Name)
-					if err != nil {
-						log.Errorf("Error triggering event: %v", err)
+					setupTriggers(event.Value)
+					refreshIfRequired(an, *event.Value)
+					if err := setTagIfNotExists(ctx, an, event.Value); err != nil {
+						log.Errorf("Error setting tag: %v", err)
 					}
-					an.Remove(annotations.KeyAction)
-				}
 
-				if err := k.SetImage(ctx, image); err != nil {
-					log.Errorf("Error updating image: %v", err)
-				}
+					if err := k.SetImage(ctx, *event.Value); err != nil {
+						log.Errorf("Error updating image: %v", err)
+					}
 
-				// * Triggers
-				for _, trigger := range image.Spec.Triggers {
-					switch trigger.Type {
-					case triggers.Crontab:
-						if ok, err := crontab.IsExistingJob(crontab.BuildKey(image.Namespace, image.Name)); err != nil || !ok {
-							if err := crontab.AddCronTab(image.Namespace, image.Name, trigger.Value); err != nil {
-								log.Errorf("Error adding cronjob: %v", err)
+				case "MODIFIED":
+					switch an.Action().Get() { //nolint:gocritic
+					case annotations.ActionReload:
+
+						// * Here is only if the yaml has been updated and the operator has detected it
+						for _, trigger := range event.Value.Spec.Triggers {
+							switch trigger.Type {
+							case triggers.Crontab:
+								cleanTriggers(event.Value)
+							case triggers.Webhook:
+								log.Info("Webhook trigger not implemented yet")
 							}
 						}
-					case triggers.Webhook:
-						log.Info("Webhook trigger not implemented yet")
+
+						// Remove the annotation annotations.AnnotationActionKey in the map[string]string
+						an.Remove(annotations.KeyAction)
 					}
+
+					refreshIfRequired(an, *event.Value)
+
+					if err := k.SetImage(ctx, *event.Value); err != nil {
+						log.Errorf("Error updating image: %v", err)
+					}
+
+					setupTriggers(event.Value)
+
+				case "DELETED":
+					cleanTriggers(event.Value)
 				}
 			}
-
-			time.Sleep(2 * time.Second)
 		}
 	}()
 
 	<-c
+	cancel()
 }
