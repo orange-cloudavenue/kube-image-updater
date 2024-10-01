@@ -2,11 +2,6 @@ examples/
 bin/
 dist/
 config/manifests/mutatingWebhookConfiguration.yaml
-site/
-**/charts/**
+<<<<<<< HEAD
 config/manifests/deployments.yaml
 site/
-=======
-site/
-**/charts/**
->>>>>>> 77a2881 (feat: add registry authentication (#18))
