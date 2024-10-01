@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"log"
 	"net/http"
@@ -11,10 +12,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
+	"github.com/orange-cloudavenue/kube-image-updater/internal/health"
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 )
 
 var (
@@ -37,6 +41,12 @@ var (
 
 	kubeClient          *client.Client
 	manifestWebhookPath string = "./config/manifests/mutatingWebhookConfiguration.yaml"
+
+	// Prometheus metrics
+	promHTTPRequestsTotal prometheus.Counter   = metrics.NewCounter("http_requests_total", "The total number of handled HTTP requests.")
+	promHTTPErrorsTotal   prometheus.Counter   = metrics.NewCounter("http_errors_total", "The total number of handled HTTP errors.")
+	promHTTPDuration      prometheus.Histogram = metrics.NewHistogram("http_response_time_seconds", "The duration in seconds of HTTP requests.")
+	promPatchTotal        prometheus.Counter   = metrics.NewCounter("patch_total", "The total number of requests to a patch.")
 )
 
 func init() {
@@ -54,6 +64,12 @@ func init() {
 
 // Start http server for webhook
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
+
 	var err error
 	flag.StringVar(&webhookPort, "webhook-port", webhookPort, "Webhook server port.ex: :8443")
 	flag.StringVar(&webhookNamespace, "namespace", webhookNamespace, "Kimup Webhook Mutating namespace.")
@@ -73,17 +89,19 @@ func main() {
 		panic(err)
 	}
 
+	// !-- Webhook server --! //
 	// generate cert for webhook
 	pair, caPEM := generateTLS()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc(webhookPathMutate, serveHandler)
 
 	// create or update the mutatingwebhookconfiguration
 	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, kubeClient)
 	if err != nil {
-		errorLogger.Fatalf("Failed to create or update the mutating webhook configuration: %v", err)
+		errorLogger.Printf("Failed to create or update the mutating webhook configuration: %v", err)
+		signalChan <- os.Interrupt
 	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc(webhookPathMutate, serveHandler)
 
 	// define http server and server handler
 	s := &http.Server{
@@ -100,16 +118,30 @@ func main() {
 	// start the HTTP server
 	go func() {
 		infoLogger.Printf("Starting webhook server on %s from insideCluster=%v", s.Addr, insideCluster)
-		if err := s.ListenAndServeTLS("", ""); err != nil {
+		if err = s.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Failed to start webhook server: %v", err)
+		} else {
+			log.Printf("Shutting down webhook server on %s", s.Addr)
 		}
 	}()
 
-	// listening OS shutdown singal
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+	// !-- Prometheus metrics server --! //
+	// start the metrics server
+	if err := metrics.ServeProm(ctx); err != nil {
+		errorLogger.Fatalf("Failed to start metrics server: %v", err)
+	}
+
+	// !-- Health check server --! //
+	// start the health check server
+	if err := health.ServeHealth(ctx); err != nil {
+		errorLogger.Fatalf("Failed to start health check server: %v", err)
+	}
+
+	// !-- OS signal handling --! //
+	// listening OS shutdown signal
 	<-signalChan
 
+	cancel()
 	infoLogger.Printf("Got OS shutdown signal, shutting down webhook server gracefully...")
 	s.Shutdown(context.Background()) //nolint:errcheck
 }

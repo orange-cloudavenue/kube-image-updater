@@ -2,5 +2,6 @@ examples/
 bin/
 dist/
 config/manifests/mutatingWebhookConfiguration.yaml
+config/manifests/deployments.yaml
 site/
 **/charts/**

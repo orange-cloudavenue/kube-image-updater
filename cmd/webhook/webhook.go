@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,14 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/patch"
 )
 
+// func serveHandler
 func serveHandler(w http.ResponseWriter, r *http.Request) {
+	// start the timer
+	timer := prometheus.NewTimer(promHTTPDuration)
+	defer timer.ObserveDuration()
+	// increment the totalRequests counter
+	promHTTPRequestsTotal.Inc()
+
 	var body []byte
 	if r.Body != nil {
 		if data, err := io.ReadAll(r.Body); err == nil {
@@ -24,6 +32,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(body) == 0 {
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Println("empty body")
 		http.Error(w, "empty body", http.StatusBadRequest)
 		return
@@ -32,6 +41,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 	// verify the content type is accurate
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Content-Type=%s, expect application/json", contentType)
 		http.Error(w, "invalid Content-Type, expect `application/json`", http.StatusUnsupportedMediaType)
 		return
@@ -40,6 +50,7 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 	var admissionResponse *admissionv1.AdmissionResponse
 	ar := admissionv1.AdmissionReview{}
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Can't decode body: %v", err)
 		admissionResponse = &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
@@ -65,11 +76,13 @@ func serveHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(admissionReview)
 	if err != nil {
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Can't encode response: %v", err)
 		http.Error(w, fmt.Sprintf("could not encode response: %v", err), http.StatusInternalServerError)
 	}
 	infoLogger.Printf("Ready to write response ...")
 	if _, err := w.Write(resp); err != nil {
+		promHTTPErrorsTotal.Inc()
 		warningLogger.Printf("Can't write response: %v", err)
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}
@@ -135,13 +148,13 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 			// find the image associated with the pod
 			image, err = kubeClient.FindImage(ctx, pod.Namespace, container.Image)
 			if err != nil {
-				warningLogger.Printf("failed to find image: %v", err)
+				warningLogger.Printf("No associated kind Image found: %v", err)
 				continue
 			}
 		} else {
 			image, err = kubeClient.GetImage(ctx, pod.Namespace, crdName)
 			if err != nil {
-				warningLogger.Printf("failed to get image: %v", err)
+				warningLogger.Printf("Failed to get kind Image: %v", err)
 				continue
 			}
 		}
@@ -149,6 +162,8 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 		// Set the image to the pod
 		if image.ImageIsEqual(container.Image) {
 			p.AddPatch(patch.OpReplace, fmt.Sprintf("/spec/containers/%d/image", i), image.GetImageWithTag())
+			// increment the total number of patches
+			promPatchTotal.Inc()
 		}
 
 		// Annotations
