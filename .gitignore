@@ -5,3 +5,4 @@ config/manifests/mutatingWebhookConfiguration.yaml
 <<<<<<< HEAD
 config/manifests/deployments.yaml
 site/
+**/charts/**
