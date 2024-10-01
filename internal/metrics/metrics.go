@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"log"
 	"net/http"
@@ -12,8 +14,8 @@ import (
 )
 
 var (
-	webhookMetricsPath string = "/metrics"
-	webhookMetricsPort string = ":9080"
+	metricsPath string = "/metrics"
+	metricsPort string = ":9080"
 )
 
 // NewCounter creates a new Prometheus counter
@@ -69,31 +71,45 @@ func NewSummary(name, help string) prometheus.Summary {
 }
 
 func init() {
-	flag.StringVar(&webhookMetricsPort, "metrics-port", webhookMetricsPort, "Metrics server port. ex: :9080")
-	flag.StringVar(&webhookMetricsPath, "metrics-path", webhookMetricsPath, "Metrics server path. ex: /metrics")
+	flag.StringVar(&metricsPort, "metrics-port", metricsPort, "Metrics server port. ex: :9080")
+	flag.StringVar(&metricsPath, "metrics-path", metricsPath, "Metrics server path. ex: /metrics")
 }
 
 // ServeProm starts a Prometheus metrics server
 // TODO - Add context to cancel the server
 // in order to stop the server gracefully
-func ServeProm() error {
-	var err error
+func ServeProm(ctx context.Context) (err error) {
 	// Define Metrics server
 	mux := http.NewServeMux()
-	mux.Handle(webhookMetricsPath, promhttp.Handler())
+	mux.Handle(metricsPath, promhttp.Handler())
 
 	sm := &http.Server{
-		Addr:        webhookMetricsPort,
+		Addr:        metricsPort,
 		Handler:     mux,
 		ReadTimeout: 10 * time.Second,
 	}
 
 	// Start the metrics server
 	go func() {
-		log.Printf("Starting metrics server on %s", webhookMetricsPort)
-		if err = sm.ListenAndServe(); err != nil {
-			log.Fatalf("Failed to start metrics server: %v", err)
+		log.Printf("Starting metrics server on %s", metricsPort)
+		if err = sm.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			return
 		}
 	}()
-	return err
+
+	// Kill the server if there is an error
+	go func() {
+		for {
+			<-ctx.Done()
+			ctxTimeout, cancel := context.WithTimeout(ctx, 5*time.Second)
+			log.Printf("Shutting down metrics server on %s", sm.Addr)
+			defer cancel()
+			if err = sm.Shutdown(ctxTimeout); err != nil {
+				log.Printf("Failed to shutdown metrics server: %v", err)
+			}
+			return
+		}
+	}()
+
+	return nil
 }
