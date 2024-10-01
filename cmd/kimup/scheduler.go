@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/gookit/event"
@@ -17,16 +18,27 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
-func initScheduler(k *kubeclient.Client) {
-	// Start Crontab client
-	crontab.New(context.Background())
+type locks map[string]*sync.RWMutex
 
+func initScheduler(ctx context.Context, k *kubeclient.Client) {
+	l := make(locks)
+
+	// Start Crontab client
+	crontab.New(ctx)
 	event.On(triggers.RefreshImage.String(), event.ListenerFunc(func(e event.Event) (err error) {
+		if l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] == nil {
+			l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] = &sync.RWMutex{}
+		}
+
+		// Lock the image to prevent concurrent refreshes
+		l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)].Lock()
+		defer l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)].Unlock()
+
 		retryErr := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			// TODO: implement image refresh
 			log.Infof("Refreshing image %s in namespace %s", e.Data()["image"], e.Data()["namespace"])
 
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
 
 			image, err := k.GetImage(ctx, e.Data()["namespace"].(string), e.Data()["image"].(string))

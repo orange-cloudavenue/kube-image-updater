@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,8 +33,15 @@ import (
 // ImageReconciler reconciles a Image object
 type ImageReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
+
+type ImageEvent string
+
+const (
+	ImageUpdate ImageEvent = "ImageUpdate"
+)
 
 // +kubebuilder:rbac:groups=kimup.cloudavenue.io,resources=images,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kimup.cloudavenue.io,resources=images/status,verbs=get;update;patch
@@ -62,19 +70,21 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	log.Log.Info(fmt.Sprintf("Reconciling Image %s in namespace %s", req.Name, req.Namespace))
 
-	ok, err := an.CheckSum().IsEqual(image.Spec)
-	if err != nil || !ok {
+	equal, err := an.CheckSum().IsEqual(image.Spec)
+	if err != nil || !equal {
 		an.Action().Set(annotations.ActionReload)
+		r.Recorder.Event(&image, "Normal", string(ImageUpdate), "Image configuration has changed. Reloading image.")
 	}
 
-	if err := an.CheckSum().Set(image.Spec); err != nil {
-		log.Log.Error(err, "unable to refresh checksum")
-		return ctrl.Result{}, err
-	}
-
-	if err := r.Client.Update(ctx, &image); err != nil {
-		log.Log.Error(err, "unable to update Image")
-		return ctrl.Result{}, err
+	if an.CheckSum().IsNull() || !equal {
+		if err := an.CheckSum().Set(image.Spec); err != nil {
+			log.Log.Error(err, "unable to refresh checksum")
+			return ctrl.Result{}, err
+		}
+		if err := r.Client.Update(ctx, &image); err != nil {
+			log.Log.Error(err, "unable to update Image")
+			return ctrl.Result{}, err
+		}
 	}
 
 	// * Status
