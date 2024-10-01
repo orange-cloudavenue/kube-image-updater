@@ -1,11 +1,8 @@
-<<<<<<< HEAD
 ---
 hide:
   - toc
 ---
 
-=======
->>>>>>> e2a5d09 (chore: Add Doc (#17))
 # HowTo
 
 ## How to Use
@@ -39,10 +36,7 @@ spec:
 ```bash
 kubectl apply -f image.yaml
 ```
-<<<<<<< HEAD
 
-=======
->>>>>>> e2a5d09 (chore: Add Doc (#17))
 In this example the image `ghcr.io/orange-cloudavenue/kube-image-updater` will be updated every 12 hours with the latest minor version.
 
 3 - Check the Image TAG:
@@ -51,14 +45,9 @@ In this example the image `ghcr.io/orange-cloudavenue/kube-image-updater` will b
 kubectl get image demo'
 
 NAME   IMAGE                  TAG
-<<<<<<< HEAD
 demo   ghcr.io/azrod/golink
 ```
 
-=======
-demo   ghcr.io/azrod/golink   
-```
->>>>>>> e2a5d09 (chore: Add Doc (#17))
 But you can force the update by running the following command:
 
 ```bash
@@ -87,11 +76,8 @@ spec:
       app: golink
   template:
     metadata:
-<<<<<<< HEAD
       annotations:
         kimup.cloudavenue.io/enabled: "true"
-=======
->>>>>>> e2a5d09 (chore: Add Doc (#17))
       labels:
         app: golink
     spec:
@@ -109,8 +95,3 @@ kubectl apply -f deployment.yaml
 ```
 
 Now the deployment is running with the image `ghcr.io/azrod/golink:v0.1.0` define by your rules in the CRD `Image`.
-<<<<<<< HEAD
-=======
-
-
->>>>>>> e2a5d09 (chore: Add Doc (#17))

@@ -77,7 +77,3 @@ Type of **Actions**:
 - **refresh**: Apply the new image to the resource.
 - **notify**: Notify a webhook with the new image.(Not implemented yet)
 - **request-approval**: Request approval to apply the new image.(Not implemented yet)
-<<<<<<< HEAD
-=======
-
->>>>>>> e2a5d09 (chore: Add Doc (#17))

@@ -6,6 +6,7 @@ metadata:
   namespace: default
 webhooks:
   - sideEffects: None
+  - sideEffects: None
     admissionReviewVersions: ["v1"]
     name: your.example.com
     clientConfig:
@@ -23,9 +24,8 @@ webhooks:
         apiVersions: ["v1"]
         resources: ["pods"]
         scope: "Namespaced"
+        scope: "Namespaced"
         # namespaceSelector:
         #   matchExpressions:
         #     - {key: "name", operator: "In", values: ["core-services"]}
     failurePolicy: Fail
-    
- 
