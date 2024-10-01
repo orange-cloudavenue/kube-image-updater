@@ -49,6 +49,19 @@ func NewHistogram(name, help string) prometheus.Histogram {
 	})
 }
 
+// NewSummary creates a new Prometheus summary
+// The NewSummary use a function to directly register the summary
+// The function returns a prometheus.Summary
+//
+// Name: The name of the summary
+// Help: The description help text of the summary
+func NewSummary(name, help string) prometheus.Summary {
+	return promauto.NewSummary(prometheus.SummaryOpts{
+		Name: name,
+		Help: help,
+	})
+}
+
 // ServeProm starts a Prometheus metrics server
 func ServeProm(port, path string) error {
 	var err error

@@ -148,13 +148,13 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 			// find the image associated with the pod
 			image, err = kubeClient.FindImage(ctx, pod.Namespace, container.Image)
 			if err != nil {
-				warningLogger.Printf("failed to find image: %v", err)
+				warningLogger.Printf("No associated kind Image found: %v", err)
 				continue
 			}
 		} else {
 			image, err = kubeClient.GetImage(ctx, pod.Namespace, crdName)
 			if err != nil {
-				warningLogger.Printf("failed to get image: %v", err)
+				warningLogger.Printf("Failed to get kind Image: %v", err)
 				continue
 			}
 		}
@@ -162,6 +162,8 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 		// Set the image to the pod
 		if image.ImageIsEqual(container.Image) {
 			p.AddPatch(patch.OpReplace, fmt.Sprintf("/spec/containers/%d/image", i), image.GetImageWithTag())
+			// increment the total number of patches
+			promPatchTotal.Inc()
 		}
 
 		// Annotations

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -32,9 +33,13 @@ var (
 	webhookPathMutate  string = "/mutate"
 	webhookPort        string = ":8443"
 	webhookBase               = webhookServiceName + "." + webhookNamespace
+	webhookHost        string = "192.168.1.48"
 
 	webhookMetricsPath string = "/metrics"
 	webhookMetricsPort string = ":9080"
+
+	webhookHealthPort string = ":9081"
+	webhookHealthPath string = "/healthz"
 
 	runtimeScheme = runtime.NewScheme()
 	codecs        = serializer.NewCodecFactory(runtimeScheme)
@@ -47,6 +52,7 @@ var (
 	promHTTPRequestsTotal prometheus.Counter   = metrics.NewCounter("http_requests_total", "The total number of handled HTTP requests.")
 	promHTTPErrorsTotal   prometheus.Counter   = metrics.NewCounter("http_errors_total", "The total number of handled HTTP errors.")
 	promHTTPDuration      prometheus.Histogram = metrics.NewHistogram("http_response_time_seconds", "The duration in seconds of HTTP requests.")
+	promPatchTotal        prometheus.Counter   = metrics.NewCounter("patch_total", "The total number of requests to a patch.")
 )
 
 func init() {
@@ -68,6 +74,7 @@ func main() {
 	flag.StringVar(&webhookPort, "webhook-port", webhookPort, "Webhook server port.ex: :8443")
 	flag.StringVar(&webhookNamespace, "namespace", webhookNamespace, "Kimup Webhook Mutating namespace.")
 	flag.StringVar(&webhookServiceName, "service-name", webhookServiceName, "Kimup Webhook Mutating service name.")
+	flag.StringVar(&webhookHost, "webhook-host", webhookHost, "Webhook server host.")
 
 	flag.BoolVar(&insideCluster, "inside-cluster", true, "True if running inside k8s cluster.")
 
@@ -83,17 +90,18 @@ func main() {
 		panic(err)
 	}
 
+	// !-- Webhook server --! //
 	// generate cert for webhook
 	pair, caPEM := generateTLS()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc(webhookPathMutate, serveHandler)
 
 	// create or update the mutatingwebhookconfiguration
 	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, kubeClient)
 	if err != nil {
 		errorLogger.Fatalf("Failed to create or update the mutating webhook configuration: %v", err)
 	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc(webhookPathMutate, serveHandler)
 
 	// define http server and server handler
 	s := &http.Server{
@@ -115,10 +123,43 @@ func main() {
 		}
 	}()
 
+	// !-- Prometheus metrics server --! //
+	// start the metrics server
 	if err := metrics.ServeProm(webhookMetricsPort, webhookMetricsPath); err != nil {
 		errorLogger.Fatalf("Failed to start metrics server: %v", err)
 	}
 
+	// !-- Health check server --! //
+	// define health check
+	muxHealth := http.NewServeMux()
+	muxHealth.HandleFunc(webhookHealthPath, func(w http.ResponseWriter, r *http.Request) {
+		_, err := net.DialTimeout("tcp", webhookPort, 1*time.Second)
+		if err != nil {
+			log.Println("Webhook port is unreachable, error: ", err)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write([]byte(`{"status":"ok"}`))
+		if err != nil {
+			errorLogger.Printf("Failed to write health check response: %v", err)
+		}
+	})
+
+	// create health check server
+	sc := &http.Server{
+		Addr:        webhookHealthPort,
+		Handler:     muxHealth,
+		ReadTimeout: 10 * time.Second,
+	}
+
+	go func() {
+		infoLogger.Printf("Starting health check server on %s", sc.Addr)
+		if err = sc.ListenAndServe(); err != nil {
+			log.Fatalf("Failed to start health check server: %v", err)
+		}
+	}()
+
+	// !-- OS signal handling --! //
 	// listening OS shutdown singal
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
