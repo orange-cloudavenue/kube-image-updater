@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"time"
@@ -8,6 +9,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+var (
+	webhookMetricsPath string = "/metrics"
+	webhookMetricsPort string = ":9080"
 )
 
 // NewCounter creates a new Prometheus counter
@@ -62,22 +68,29 @@ func NewSummary(name, help string) prometheus.Summary {
 	})
 }
 
+func init() {
+	flag.StringVar(&webhookMetricsPort, "metrics-port", webhookMetricsPort, "Metrics server port. ex: :9080")
+	flag.StringVar(&webhookMetricsPath, "metrics-path", webhookMetricsPath, "Metrics server path. ex: /metrics")
+}
+
 // ServeProm starts a Prometheus metrics server
-func ServeProm(port, path string) error {
+// TODO - Add context to cancel the server
+// in order to stop the server gracefully
+func ServeProm() error {
 	var err error
 	// Define Metrics server
 	mux := http.NewServeMux()
-	mux.Handle(path, promhttp.Handler())
+	mux.Handle(webhookMetricsPath, promhttp.Handler())
 
 	sm := &http.Server{
-		Addr:        port,
+		Addr:        webhookMetricsPort,
 		Handler:     mux,
 		ReadTimeout: 10 * time.Second,
 	}
 
 	// Start the metrics server
 	go func() {
-		log.Printf("Starting metrics server on %s", port)
+		log.Printf("Starting metrics server on %s", webhookMetricsPort)
 		if err = sm.ListenAndServe(); err != nil {
 			log.Fatalf("Failed to start metrics server: %v", err)
 		}

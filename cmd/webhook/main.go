@@ -33,10 +33,6 @@ var (
 	webhookPathMutate  string = "/mutate"
 	webhookPort        string = ":8443"
 	webhookBase               = webhookServiceName + "." + webhookNamespace
-	webhookHost        string = "192.168.1.48"
-
-	webhookMetricsPath string = "/metrics"
-	webhookMetricsPort string = ":9080"
 
 	webhookHealthPort string = ":9081"
 	webhookHealthPath string = "/healthz"
@@ -74,7 +70,6 @@ func main() {
 	flag.StringVar(&webhookPort, "webhook-port", webhookPort, "Webhook server port.ex: :8443")
 	flag.StringVar(&webhookNamespace, "namespace", webhookNamespace, "Kimup Webhook Mutating namespace.")
 	flag.StringVar(&webhookServiceName, "service-name", webhookServiceName, "Kimup Webhook Mutating service name.")
-	flag.StringVar(&webhookHost, "webhook-host", webhookHost, "Webhook server host.")
 
 	flag.BoolVar(&insideCluster, "inside-cluster", true, "True if running inside k8s cluster.")
 
@@ -125,7 +120,7 @@ func main() {
 
 	// !-- Prometheus metrics server --! //
 	// start the metrics server
-	if err := metrics.ServeProm(webhookMetricsPort, webhookMetricsPath); err != nil {
+	if err := metrics.ServeProm(); err != nil {
 		errorLogger.Fatalf("Failed to start metrics server: %v", err)
 	}
 
