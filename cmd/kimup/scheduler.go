@@ -35,13 +35,12 @@ func initScheduler(ctx context.Context, k *kubeclient.Client) {
 		defer l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)].Unlock()
 
 		retryErr := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			// TODO: implement image refresh
 			log.Infof("Refreshing image %s in namespace %s", e.Data()["image"], e.Data()["namespace"])
 
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
 
-			image, err := k.GetImage(ctx, e.Data()["namespace"].(string), e.Data()["image"].(string))
+			image, err := k.Image().Get(ctx, e.Data()["namespace"].(string), e.Data()["image"].(string))
 			if err != nil {
 				if err := crontab.RemoveJob(crontab.BuildKey(e.Data()["namespace"].(string), e.Data()["image"].(string))); err != nil {
 					return err
@@ -127,7 +126,7 @@ func initScheduler(ctx context.Context, k *kubeclient.Client) {
 				}
 			}
 
-			if err := k.SetImage(ctx, image); err != nil {
+			if err := k.Image().Update(ctx, image); err != nil {
 				log.Errorf("Error updating image: %v", err)
 			}
 
