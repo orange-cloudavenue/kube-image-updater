@@ -3,20 +3,19 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"flag"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/orange-cloudavenue/kube-image-updater/internal/health"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 )
@@ -60,24 +59,25 @@ func init() {
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
 	}
+	// init flags
+	flag.StringVar(&webhookPort, "webhook-port", webhookPort, "Webhook server port.ex: :8443")
+	flag.StringVar(&webhookNamespace, "namespace", webhookNamespace, "Kimup Webhook Mutating namespace.")
+	flag.StringVar(&webhookServiceName, "service-name", webhookServiceName, "Kimup Webhook Mutating service name.")
+	flag.BoolVar(&insideCluster, "inside-cluster", true, "True if running inside k8s cluster.")
+	flag.Parse()
 }
 
 // Start http server for webhook
 func main() {
+	// !-- Context --! //
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	wg := sync.WaitGroup{}
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
 
 	var err error
-	flag.StringVar(&webhookPort, "webhook-port", webhookPort, "Webhook server port.ex: :8443")
-	flag.StringVar(&webhookNamespace, "namespace", webhookNamespace, "Kimup Webhook Mutating namespace.")
-	flag.StringVar(&webhookServiceName, "service-name", webhookServiceName, "Kimup Webhook Mutating service name.")
-
-	flag.BoolVar(&insideCluster, "inside-cluster", true, "True if running inside k8s cluster.")
-
-	flag.Parse()
 
 	// homedir for kubeconfig
 	homedir, err := os.UserHomeDir()
@@ -100,48 +100,42 @@ func main() {
 		signalChan <- os.Interrupt
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc(webhookPathMutate, serveHandler)
-
-	// define http server and server handler
-	s := &http.Server{
-		Addr:        webhookPort,
-		Handler:     mux,
-		ReadTimeout: 10 * time.Second,
-		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{pair},
-			MinVersion:   tls.VersionTLS12,
-			// InsecureSkipVerify: true, //nolint:gosec
-		},
+	// Start the webhook server
+	wg.Add(1)
+	if err := StarWebhook(ctx, &wg, &tls.Config{
+		Certificates: []tls.Certificate{pair},
+		MinVersion:   tls.VersionTLS12,
+		// InsecureSkipVerify: true, //nolint:gosec
+	}); err != nil {
+		errorLogger.Fatalf("Failed to start webhook server: %v", err)
 	}
-
-	// start the HTTP server
-	go func() {
-		infoLogger.Printf("Starting webhook server on %s from insideCluster=%v", s.Addr, insideCluster)
-		if err = s.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Failed to start webhook server: %v", err)
-		} else {
-			log.Printf("Shutting down webhook server on %s", s.Addr)
-		}
-	}()
 
 	// !-- Prometheus metrics server --! //
 	// start the metrics server
-	if err := metrics.ServeProm(ctx); err != nil {
+	if err := metrics.StartProm(ctx, &wg); err != nil {
 		errorLogger.Fatalf("Failed to start metrics server: %v", err)
 	}
 
 	// !-- Health check server --! //
 	// start the health check server
-	if err := health.ServeHealth(ctx); err != nil {
+	if err := health.StartHealth(ctx, &wg); err != nil {
 		errorLogger.Fatalf("Failed to start health check server: %v", err)
 	}
 
 	// !-- OS signal handling --! //
 	// listening OS shutdown signal
 	<-signalChan
-
+	infoLogger.Printf("waiting for the server to shutdown gracefully...")
+	// cancel the context
 	cancel()
-	infoLogger.Printf("Got OS shutdown signal, shutting down webhook server gracefully...")
-	s.Shutdown(context.Background()) //nolint:errcheck
+	// wait all server for shutdown
+	wg.Wait()
+	// time.Sleep(2 * time.Second)
+	infoLogger.Printf("All servers are down: bye...")
+}
+
+func StarWebhook(ctx context.Context, wg *sync.WaitGroup, tlsC *tls.Config) (err error) {
+	s := httpserver.New(httpserver.WithAddr(webhookPort), httpserver.WithTLSConfig(tlsC))
+	s.Router.Post(webhookPathMutate, serveHandler)
+	return s.Start(ctx, wg)
 }

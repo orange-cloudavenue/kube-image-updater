@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/containers/image/v5 v5.30.1
 	github.com/crazy-max/diun/v4 v4.28.0
+	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gookit/event v1.1.2
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
