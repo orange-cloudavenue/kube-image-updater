@@ -146,13 +146,13 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 		var image v1alpha1.Image
 		if crdName == "" {
 			// find the image associated with the pod
-			image, err = kubeClient.FindImage(ctx, pod.Namespace, container.Image)
+			image, err = kubeClient.Image().Find(ctx, pod.Namespace, container.Image)
 			if err != nil {
 				warningLogger.Printf("No associated kind Image found: %v", err)
 				continue
 			}
 		} else {
-			image, err = kubeClient.GetImage(ctx, pod.Namespace, crdName)
+			image, err = kubeClient.Image().Get(ctx, pod.Namespace, crdName)
 			if err != nil {
 				warningLogger.Printf("Failed to get kind Image: %v", err)
 				continue

@@ -28,13 +28,15 @@ import (
 
 	kimupv1alpha1 "github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 )
 
 // ImageReconciler reconciles a Image object
 type ImageReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	KubeAPIClient *kubeclient.Client
+	Scheme        *runtime.Scheme
+	Recorder      record.EventRecorder
 }
 
 type ImageEvent string

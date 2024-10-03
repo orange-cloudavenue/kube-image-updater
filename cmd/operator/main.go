@@ -33,6 +33,7 @@ import (
 
 	kimupv1alpha1 "github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/controller"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -143,10 +144,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	kubeAPIClient, err := kubeclient.NewFromRestConfig(ctrl.GetConfigOrDie())
+	if err != nil {
+		setupLog.Error(err, "unable to create kubeclient")
+		os.Exit(1)
+	}
+
 	if err = (&controller.ImageReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("kimup-operator"),
+		Client:        mgr.GetClient(),
+		KubeAPIClient: kubeAPIClient,
+		Scheme:        mgr.GetScheme(),
+		Recorder:      mgr.GetEventRecorderFor("kimup-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Image")
 		os.Exit(1)

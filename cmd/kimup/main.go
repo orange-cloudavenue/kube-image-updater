@@ -48,7 +48,7 @@ func main() {
 	initScheduler(ctx, k)
 
 	go func() {
-		x, err := k.WatchEventsImage(ctx)
+		x, err := k.Image().Watch(ctx)
 		if err != nil {
 			log.Panicf("Error watching events: %v", err)
 		}
@@ -65,20 +65,20 @@ func main() {
 				ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 				defer cancel()
 
-				an := annotations.New(ctx, event.Value)
+				an := annotations.New(ctx, &event.Value)
 
 				switch event.Type {
 				case "ADDED":
 					// Clean old action
 					an.Remove(annotations.KeyAction)
 
-					setupTriggers(event.Value)
-					refreshIfRequired(an, *event.Value)
-					if err := setTagIfNotExists(ctx, an, event.Value); err != nil {
+					setupTriggers(&event.Value)
+					refreshIfRequired(an, event.Value)
+					if err := setTagIfNotExists(ctx, an, &event.Value); err != nil {
 						log.Errorf("Error setting tag: %v", err)
 					}
 
-					if err := k.SetImage(ctx, *event.Value); err != nil {
+					if err := k.Image().Update(ctx, event.Value); err != nil {
 						log.Errorf("Error updating image: %v", err)
 					}
 
@@ -90,7 +90,7 @@ func main() {
 						for _, trigger := range event.Value.Spec.Triggers {
 							switch trigger.Type {
 							case triggers.Crontab:
-								cleanTriggers(event.Value)
+								cleanTriggers(&event.Value)
 							case triggers.Webhook:
 								log.Info("Webhook trigger not implemented yet")
 							}
@@ -100,16 +100,16 @@ func main() {
 						an.Remove(annotations.KeyAction)
 					}
 
-					refreshIfRequired(an, *event.Value)
+					refreshIfRequired(an, event.Value)
 
-					if err := k.SetImage(ctx, *event.Value); err != nil {
+					if err := k.Image().Update(ctx, event.Value); err != nil {
 						log.Errorf("Error updating image: %v", err)
 					}
 
-					setupTriggers(event.Value)
+					setupTriggers(&event.Value)
 
 				case "DELETED":
-					cleanTriggers(event.Value)
+					cleanTriggers(&event.Value)
 				}
 			}
 		}
