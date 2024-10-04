@@ -7,14 +7,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	"github.com/orange-cloudavenue/kube-image-updater/internal/health"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
@@ -69,15 +67,15 @@ func init() {
 
 // Start http server for webhook
 func main() {
-	// !-- Context --! //
+	var err error
+
+	// -- Context -- //
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	wg := sync.WaitGroup{}
 
+	// -- OS signal handling -- //
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
-
-	var err error
 
 	// homedir for kubeconfig
 	homedir, err := os.UserHomeDir()
@@ -89,9 +87,14 @@ func main() {
 		panic(err)
 	}
 
-	// !-- Webhook server --! //
+	// -- Webhook server -- //
 	// generate cert for webhook
 	pair, caPEM := generateTLS()
+	tlsC := &tls.Config{
+		Certificates: []tls.Certificate{pair},
+		MinVersion:   tls.VersionTLS12,
+		// InsecureSkipVerify: true, //nolint:gosec
+	}
 
 	// create or update the mutatingwebhookconfiguration
 	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, kubeClient)
@@ -100,42 +103,27 @@ func main() {
 		signalChan <- os.Interrupt
 	}
 
-	// Start the webhook server
-	wg.Add(1)
-	if err := StarWebhook(ctx, &wg, &tls.Config{
-		Certificates: []tls.Certificate{pair},
-		MinVersion:   tls.VersionTLS12,
-		// InsecureSkipVerify: true, //nolint:gosec
-	}); err != nil {
+	// !-- Start the webhook server --! //
+	waitHTTP := httpserver.Init()
+	s := httpserver.New(httpserver.WithAddr(webhookPort), httpserver.WithTLSConfig(tlsC))
+	s.Router.Post(webhookPathMutate, serveHandler)
+	if err := s.Start(ctx); err != nil {
 		errorLogger.Fatalf("Failed to start webhook server: %v", err)
 	}
 
 	// !-- Prometheus metrics server --! //
-	// start the metrics server
-	if err := metrics.StartProm(ctx, &wg); err != nil {
+	if err = httpserver.StartMetrics(ctx); err != nil {
 		errorLogger.Fatalf("Failed to start metrics server: %v", err)
 	}
 
 	// !-- Health check server --! //
-	// start the health check server
-	if err := health.StartHealth(ctx, &wg); err != nil {
+	if err := httpserver.StartHealth(ctx); err != nil {
 		errorLogger.Fatalf("Failed to start health check server: %v", err)
 	}
 
 	// !-- OS signal handling --! //
-	// listening OS shutdown signal
 	<-signalChan
-	infoLogger.Printf("waiting for the server to shutdown gracefully...")
 	// cancel the context
 	cancel()
-	// wait all server for shutdown
-	wg.Wait()
-	// time.Sleep(2 * time.Second)
-	infoLogger.Printf("All servers are down: bye...")
-}
-
-func StarWebhook(ctx context.Context, wg *sync.WaitGroup, tlsC *tls.Config) (err error) {
-	s := httpserver.New(httpserver.WithAddr(webhookPort), httpserver.WithTLSConfig(tlsC))
-	s.Router.Post(webhookPathMutate, serveHandler)
-	return s.Start(ctx, wg)
+	waitHTTP()
 }

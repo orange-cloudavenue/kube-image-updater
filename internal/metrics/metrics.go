@@ -1,20 +1,8 @@
 package metrics
 
 import (
-	"context"
-	"flag"
-	"sync"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
-)
-
-var (
-	metricsPath string = "/metrics"
-	metricsPort string = ":9080"
 )
 
 // NewCounter creates a new Prometheus counter
@@ -70,15 +58,15 @@ func NewSummary(name, help string) prometheus.Summary {
 }
 
 func init() {
-	flag.StringVar(&metricsPort, "metrics-port", metricsPort, "Metrics server port. ex: :9080")
-	flag.StringVar(&metricsPath, "metrics-path", metricsPath, "Metrics server path. ex: /metrics")
+	// flag.StringVar(&metricsPort, "metrics-port", metricsPort, "Metrics server port. ex: :9080")
+	// flag.StringVar(&metricsPath, "metrics-path", metricsPath, "Metrics server path. ex: /metrics")
 }
 
 // ServeProm starts a Prometheus metrics server
 // TODO - Add context to cancel the server
 // in order to stop the server gracefully
-func StartProm(ctx context.Context, wg *sync.WaitGroup) (err error) {
-	s := httpserver.New(httpserver.WithAddr(metricsPort))
-	s.AddGetRoutes(metricsPath, promhttp.Handler())
-	return s.Start(ctx, wg)
-}
+// func Start(ctx context.Context) (err error) {
+// 	s := httpserver.New(httpserver.WithAddr(metricsPort))
+// 	s.AddGetRoutes(metricsPath, promhttp.Handler())
+// 	return s.Start(ctx)
+// }
