@@ -1,5 +1,30 @@
 site_name: kube-image-updater
 
+# ! Navigation
+
+nav:
+  - Overview: "index.md"
+  - Getting Started:
+    - Installation: install.md
+    - Howto: howto.md
+  - Custom Resources:
+    - Image: crd/image.md
+    - AlertConfig: crd/alertconfig.md
+  - Triggers:
+    - Annotation: triggers/annotation.md
+    - Crontab: triggers/crontab.md
+  - Rules:
+    - Always: rules/always.md
+    - Semantic Versioning: rules/semver.md
+    - Regex: rules/regex.md
+  - Actions:
+    - Apply: actions/apply.md
+    - Alerts:
+      - Getting Started: actions/alerts/getting-start.md
+      - Discord: actions/alerts/discord.md
+
+# ! Other settings
+
 theme:
   name: material
   palette:
@@ -20,11 +45,13 @@ theme:
   features:
     - content.code.copy
     - content.code.select
-    - navigation.sections
-    - navigation.top
     - content.code.annotate
     - header.autohide
+    - navigation.sections
+    - navigation.top
     - navigation.instant
+    - navigation.instant.progress
+    - navigation.indexes
   icon:
     repo: fontawesome/brands/github-alt
   # favicon: images/favicon.png
@@ -38,13 +65,6 @@ plugins:
   - search
   - mkdocs-video
 
-nav:
-  - Overview: "index.md"
-  - Getting Started:
-    - Installation: install.md
-    - Howto: howto.md
-  - Custom Resources:
-    - Image: crd/image.md
 
 markdown_extensions:
   # Python Markdown
@@ -54,6 +74,7 @@ markdown_extensions:
   - def_list
   - footnotes
   - md_in_html
+  - tables
   - toc:
       permalink: true
 

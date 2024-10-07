@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 # Custom Resource Definition `Image`
 
 This is a custom resource definition for an image. It is used to store information about an image.
