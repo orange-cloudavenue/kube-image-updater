@@ -87,9 +87,12 @@ func main() {
 		panic(err)
 	}
 
-	// -- Webhook server -- //
+	// * Webhook server
 	// generate cert for webhook
-	pair, caPEM := generateTLS()
+	pair, caPEM, err := generateTLS()
+	if err != nil {
+		errorLogger.Fatalf("Failed to generate TLS pair: %v", err)
+	}
 	tlsC := &tls.Config{
 		Certificates: []tls.Certificate{pair},
 		MinVersion:   tls.VersionTLS12,
@@ -103,22 +106,15 @@ func main() {
 		signalChan <- os.Interrupt
 	}
 
-	// !-- Start the webhook server --! //
-	waitHTTP := httpserver.Init()
-	s := httpserver.New(httpserver.WithAddr(webhookPort), httpserver.WithTLSConfig(tlsC))
-	s.Router.Post(webhookPathMutate, serveHandler)
-	if err := s.Start(ctx); err != nil {
-		errorLogger.Fatalf("Failed to start webhook server: %v", err)
+	// * Config the webhook server
+	a, waitHTTP := httpserver.Init(ctx)
+	s, err := a.Add("webhook", httpserver.WithTLS(tlsC), httpserver.WithAddr(webhookPort))
+	if err != nil {
+		errorLogger.Fatalf("Failed to create the server: %v", err)
 	}
-
-	// !-- Prometheus metrics server --! //
-	if err = httpserver.StartMetrics(ctx); err != nil {
-		errorLogger.Fatalf("Failed to start metrics server: %v", err)
-	}
-
-	// !-- Health check server --! //
-	if err := httpserver.StartHealth(ctx); err != nil {
-		errorLogger.Fatalf("Failed to start health check server: %v", err)
+	s.Config.Post(webhookPathMutate, ServeHandler)
+	if err := a.Run(); err != nil {
+		errorLogger.Fatalf("Failed to start HTTP servers: %v", err)
 	}
 
 	// !-- OS signal handling --! //
