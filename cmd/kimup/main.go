@@ -74,7 +74,7 @@ func main() {
 
 					setupTriggers(&event.Value)
 					refreshIfRequired(an, event.Value)
-					if err := setTagIfNotExists(ctx, an, &event.Value); err != nil {
+					if err := setTagIfNotExists(ctx, k, an, &event.Value); err != nil {
 						log.Errorf("Error setting tag: %v", err)
 					}
 

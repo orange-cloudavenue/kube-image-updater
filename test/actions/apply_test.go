@@ -8,6 +8,7 @@ import (
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
 func TestApply_Execute(t *testing.T) {
@@ -40,7 +41,10 @@ func TestApply_Execute(t *testing.T) {
 			assert.NoError(t, err)
 			image := &v1alpha1.Image{}
 
-			a.Init(tt.initialTag, tt.newTag, image)
+			a.Init(nil, models.Tags{
+				Actual: tt.initialTag,
+				New:    tt.newTag,
+			}, image, v1alpha1.ValueOrValueFrom{})
 
 			err = a.Execute(context.Background())
 			if tt.expectedErr != nil {

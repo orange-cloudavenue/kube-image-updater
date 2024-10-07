@@ -7,7 +7,6 @@ rules:
 - apiGroups:
   - kimup.cloudavenue.io
   resources:
-  - alertdiscord
   - images
   verbs:
   - create
@@ -20,14 +19,12 @@ rules:
 - apiGroups:
   - kimup.cloudavenue.io
   resources:
-  - alertdiscord/finalizers
   - images/finalizers
   verbs:
   - update
 - apiGroups:
   - kimup.cloudavenue.io
   resources:
-  - alertdiscord/status
   - images/status
   verbs:
   - get
