@@ -156,6 +156,10 @@ func (a *Annotation) Tag() (at *Tag) {
 		for {
 			select {
 			case x := <-at.aChan:
+				if a.annotations == nil {
+					a.annotations = make(map[string]string)
+				}
+
 				a.annotations[string(x.key)] = x.value
 			case <-a.ctx.Done():
 				return

@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/rules"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 )
@@ -77,7 +76,7 @@ type (
 		Name string `json:"name"`
 
 		// +kubebuilder:validation:Required
-		// +kubebuilder:validation:Enum=semver-major;semver-minor;semver-patch;regex
+		// +kubebuilder:validation:Enum=semver-major;semver-minor;semver-patch;regex;always
 		Type rules.Name `json:"type"`
 
 		// +kubebuilder:validation:Optional
@@ -91,11 +90,11 @@ type (
 	// ImageAction
 	ImageAction struct {
 		// +kubebuilder:validation:Required
-		// +kubebuilder:validation:Enum=apply;request-approval;notify
-		Type actions.Name `json:"type"`
+		// +kubebuilder:validation:Enum=apply;request-approval;alert-discord
+		Type string `json:"type"`
 
 		// +kubebuilder:validation:Optional
-		Value string `json:"value,omitempty"`
+		Data ValueOrValueFrom `json:"data,omitempty"`
 	}
 
 	// ImageStatus defines the observed state of Image

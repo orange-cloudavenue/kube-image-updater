@@ -11,6 +11,7 @@ import (
 
 	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/registry"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/rules"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
@@ -34,6 +35,9 @@ func initScheduler(ctx context.Context, k *kubeclient.Client) {
 		l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)].Lock()
 		defer l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)].Unlock()
 
+		// Sleep for 1 second to prevent concurrent refreshes
+		time.Sleep(1 * time.Second)
+
 		retryErr := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			log.Infof("Refreshing image %s in namespace %s", e.Data()["image"], e.Data()["namespace"])
 
@@ -47,9 +51,6 @@ func initScheduler(ctx context.Context, k *kubeclient.Client) {
 				}
 				return err
 			}
-
-			// an := annotations.New(ctx, &image)
-			// TODO add last refresh annotation
 
 			var auths kubeclient.K8sDockerRegistrySecretData
 
@@ -109,13 +110,17 @@ func initScheduler(ctx context.Context, k *kubeclient.Client) {
 
 				if match {
 					for _, action := range rule.Actions {
-						a, err := actions.GetAction(action.Type)
+						a, err := actions.GetActionWithUntypedName(action.Type)
 						if err != nil {
 							log.Errorf("Error getting action: %v", err)
 							continue
 						}
 
-						a.Init(tag, newTag, &image)
+						a.Init(k, models.Tags{
+							Actual:        tag,
+							New:           newTag,
+							AvailableTags: tagsAvailable,
+						}, &image, action.Data)
 						if err := a.Execute(ctx); err != nil {
 							log.Errorf("Error executing action: %v", err)
 							continue
@@ -127,7 +132,7 @@ func initScheduler(ctx context.Context, k *kubeclient.Client) {
 			}
 
 			if err := k.Image().Update(ctx, image); err != nil {
-				log.Errorf("Error updating image: %v", err)
+				return err
 			}
 
 			return nil

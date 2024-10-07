@@ -29,6 +29,7 @@ const (
 	SemverMinor Name = "semver-minor"
 	SemverPatch Name = "semver-patch"
 	Regex       Name = "regex"
+	Always      Name = "always"
 )
 
 func register(name Name, rule RuleInterface) {

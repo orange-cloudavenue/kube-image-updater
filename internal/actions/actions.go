@@ -1,52 +1,45 @@
 package actions
 
 import (
-	"context"
+	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
 type (
-	ActionInterface interface {
-		Init(actualTag, newTag string, image ImageInterface)
-		Execute(context.Context) error
-	}
-
-	_actions map[Name]ActionInterface
-	Name     string
-
-	ImageInterface interface {
-		GetAnnotations() map[string]string
-		SetStatusTag(string)
-	}
+	_actions map[models.ActionName]models.ActionInterface
 
 	action struct {
-		actualTag string
-		newTag    string
-		image     ImageInterface
+		tags  models.Tags
+		image *v1alpha1.Image
+		k     *kubeclient.Client
+		data  v1alpha1.ValueOrValueFrom
 	}
 )
 
 var actions = make(_actions)
 
 const (
-	Apply Name = "apply"
+	Apply        models.ActionName = "apply"
+	AlertDiscord models.ActionName = "alert-discord"
 )
 
-func register(name Name, action ActionInterface) {
+func register(name models.ActionName, action models.ActionInterface) {
 	actions[name] = action
 }
 
 // GetAction retrieves the ActionInterface associated with the given name.
-// It takes a Name type as an argument and returns the corresponding ActionInterface.
+// It takes a models.ActionName type as an argument and returns the corresponding ActionInterface.
 // If the name does not exist in the actions map, the behavior is undefined.
 //
 // Parameters:
 //   - name: The name of the action to retrieve.
 //
 // Returns://   - ActionInterface: The action associated with the provided name.n error indicating whether the action name was found or not. `ErrActionNotFound` is returned if the action name was not found.
-func ParseActionName(name string) (Name, error) {
+func ParseActionName(name string) (models.ActionName, error) {
 	for k := range actions {
 		if k.String() == name {
-			return Name(name), nil
+			return models.ActionName(name), nil
 		}
 	}
 
@@ -62,7 +55,7 @@ func ParseActionName(name string) (Name, error) {
 // Returns:
 //   - ActionInterface: The action associated with the given name.
 //   - error: An error indicating if the action was not found (ErrActionNotFound).
-func GetAction(name Name) (ActionInterface, error) {
+func GetAction(name models.ActionName) (models.ActionInterface, error) {
 	if _, ok := actions[name]; !ok {
 		return nil, ErrActionNotFound
 	}
@@ -80,7 +73,7 @@ func GetAction(name Name) (ActionInterface, error) {
 // Returns:
 //   - An ActionInterface corresponding to the parsed action name, or nil if not found.
 //   - An error if the action name could not be parsed.
-func GetActionWithUntypedName(name string) (ActionInterface, error) {
+func GetActionWithUntypedName(name string) (models.ActionInterface, error) {
 	n, err := ParseActionName(name)
 	if err != nil {
 		return nil, err
@@ -88,13 +81,29 @@ func GetActionWithUntypedName(name string) (ActionInterface, error) {
 	return GetAction(n)
 }
 
-// String returns the string representation of the action name.
-func (n Name) String() string {
-	return string(n)
+// * Generic action implementation
+
+func (a *action) Init(kubeClient *kubeclient.Client, tags models.Tags, image *v1alpha1.Image, data v1alpha1.ValueOrValueFrom) {
+	a.tags = tags
+	a.image = image
+	a.k = kubeClient
+	a.data = data
 }
 
-func (a *action) Init(actualTag, newTag string, image ImageInterface) {
-	a.actualTag = actualTag
-	a.newTag = newTag
-	a.image = image
+// GetActualTag returns the current actual tag from the action's tags.
+// It retrieves the value of the Actual field from the tags associated with the action.
+func (a *action) GetActualTag() string {
+	return a.tags.Actual
+}
+
+// GetNewTag returns the new tag from the action's tags.
+// It retrieves the value of the New field from the tags associated with the action.
+func (a *action) GetNewTag() string {
+	return a.tags.New
+}
+
+// GetAvailableTags returns the available tags from the action's tags.
+// It retrieves the value of the Available field from the tags associated with the action.
+func (a *action) GetAvailableTags() []string {
+	return a.tags.AvailableTags
 }

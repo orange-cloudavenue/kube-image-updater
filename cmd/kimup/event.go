@@ -8,6 +8,8 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers/crontab"
 )
@@ -55,14 +57,17 @@ func refreshIfRequired(an annotations.Annotation, image v1alpha1.Image) {
 	}
 }
 
-func setTagIfNotExists(ctx context.Context, an annotations.Annotation, image *v1alpha1.Image) error {
+func setTagIfNotExists(ctx context.Context, kubeClient *kubeclient.Client, an annotations.Annotation, image *v1alpha1.Image) error {
 	if an.Tag().IsNull() {
 		a, err := actions.GetAction(actions.Apply)
 		if err != nil {
 			return err
 		}
 
-		a.Init(image.Status.Tag, image.Spec.BaseTag, image)
+		a.Init(kubeClient, models.Tags{
+			Actual: image.Status.Tag,
+			New:    image.Spec.BaseTag,
+		}, image, v1alpha1.ValueOrValueFrom{})
 
 		if err := a.Execute(ctx); err != nil {
 			return err
