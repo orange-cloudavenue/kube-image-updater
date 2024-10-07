@@ -12,7 +12,7 @@ spec:
     listKind: AlertConfigList
     plural: alertconfig
     singular: alertconfig
-  scope: Cluster
+  scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
@@ -40,13 +40,7 @@ spec:
               discord:
                 description: AlertDiscordSpec defines the desired state of AlertDiscord
                 properties:
-                  mentions:
-                    items:
-                      type: string
-                    type: array
                   templateBody:
-                    type: string
-                  timeout:
                     type: string
                   webhookURL:
                     properties:

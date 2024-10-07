@@ -16,15 +16,6 @@ type (
 		WebhookURL ValueOrValueFrom `json:"webhookURL"`
 
 		// +kubebuilder:validation:Optional
-		// +kubebuilder:description:List of users or roles to notify.
-		Mentions []string `json:"mentions,omitempty"`
-
-		// +kubebuilder:validation:Optional
-		// +kubebuilder:description:Timeout specifies a time limit for the request to be made.
-		// +kubebuilder:default:10s
-		Timeout string `json:"timeout,omitempty"`
-
-		// +kubebuilder:validation:Optional
 		// +kubebuilder:validation:Schemaless
 		// +kubebuilder:validation:Type=string
 		TemplateBody string `json:"templateBody,omitempty"`
@@ -36,7 +27,7 @@ type (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=alertconfig,scope=Cluster
+// +kubebuilder:resource:path=alertconfig,scope=Namespaced
 
 type AlertConfig struct {
 	metav1.TypeMeta   `json:",inline"`
