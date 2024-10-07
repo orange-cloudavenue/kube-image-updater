@@ -1,21 +1,8 @@
 package metrics
 
 import (
-	"context"
-	"errors"
-	"flag"
-	"log"
-	"net/http"
-	"time"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-)
-
-var (
-	metricsPath string = "/metrics"
-	metricsPort string = ":9080"
 )
 
 // NewCounter creates a new Prometheus counter
@@ -71,45 +58,15 @@ func NewSummary(name, help string) prometheus.Summary {
 }
 
 func init() {
-	flag.StringVar(&metricsPort, "metrics-port", metricsPort, "Metrics server port. ex: :9080")
-	flag.StringVar(&metricsPath, "metrics-path", metricsPath, "Metrics server path. ex: /metrics")
+	// flag.StringVar(&metricsPort, "metrics-port", metricsPort, "Metrics server port. ex: :9080")
+	// flag.StringVar(&metricsPath, "metrics-path", metricsPath, "Metrics server path. ex: /metrics")
 }
 
 // ServeProm starts a Prometheus metrics server
 // TODO - Add context to cancel the server
 // in order to stop the server gracefully
-func ServeProm(ctx context.Context) (err error) {
-	// Define Metrics server
-	mux := http.NewServeMux()
-	mux.Handle(metricsPath, promhttp.Handler())
-
-	sm := &http.Server{
-		Addr:        metricsPort,
-		Handler:     mux,
-		ReadTimeout: 10 * time.Second,
-	}
-
-	// Start the metrics server
-	go func() {
-		log.Printf("Starting metrics server on %s", metricsPort)
-		if err = sm.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			return
-		}
-	}()
-
-	// Kill the server if there is an error
-	go func() {
-		for {
-			<-ctx.Done()
-			ctxTimeout, cancel := context.WithTimeout(ctx, 5*time.Second)
-			log.Printf("Shutting down metrics server on %s", sm.Addr)
-			defer cancel()
-			if err = sm.Shutdown(ctxTimeout); err != nil {
-				log.Printf("Failed to shutdown metrics server: %v", err)
-			}
-			return
-		}
-	}()
-
-	return nil
-}
+// func Start(ctx context.Context) (err error) {
+// 	s := httpserver.New(httpserver.WithAddr(metricsPort))
+// 	s.AddGetRoutes(metricsPath, promhttp.Handler())
+// 	return s.Start(ctx)
+// }
