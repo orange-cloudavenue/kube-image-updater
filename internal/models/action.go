@@ -9,7 +9,7 @@ import (
 
 type (
 	ActionInterface interface {
-		Init(kubeClient *kubeclient.Client, tags Tags, image *v1alpha1.Image, data v1alpha1.ValueOrValueFrom)
+		Init(kubeClient kubeclient.Interface, tags Tags, image *v1alpha1.Image, data v1alpha1.ValueOrValueFrom)
 		Execute(context.Context) error
 		GetName() ActionName
 		GetActualTag() string

@@ -12,7 +12,7 @@ type (
 	action struct {
 		tags  models.Tags
 		image *v1alpha1.Image
-		k     *kubeclient.Client
+		k     kubeclient.Interface
 		data  v1alpha1.ValueOrValueFrom
 	}
 )
@@ -83,7 +83,7 @@ func GetActionWithUntypedName(name string) (models.ActionInterface, error) {
 
 // * Generic action implementation
 
-func (a *action) Init(kubeClient *kubeclient.Client, tags models.Tags, image *v1alpha1.Image, data v1alpha1.ValueOrValueFrom) {
+func (a *action) Init(kubeClient kubeclient.Interface, tags models.Tags, image *v1alpha1.Image, data v1alpha1.ValueOrValueFrom) {
 	a.tags = tags
 	a.image = image
 	a.k = kubeClient

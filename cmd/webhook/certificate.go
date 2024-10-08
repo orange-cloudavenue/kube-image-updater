@@ -20,6 +20,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	v1 "k8s.io/client-go/applyconfigurations/admissionregistration/v1"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 )
 
 // generateTLS generates a self-signed certificate for the webhook server
@@ -185,14 +188,14 @@ func writeNewCA(caPEM *bytes.Buffer, filePath string) {
 }
 
 func applyManifest(file string) {
-	// Lire le manifest YAML
+	// read the manifest file
 	manifestBytes, err := os.ReadFile(file)
 	if err != nil {
 		warningLogger.Printf("Failed to read manifest: %v\n", err)
 		return
 	}
 
-	// Décoder le manifest YAML en objets Kubernetes
+	// decode the manifest to unstructured object
 	decoder := serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
 	obj := &unstructured.Unstructured{}
 	_, _, err = decoder.Decode(manifestBytes, nil, obj)
@@ -201,10 +204,19 @@ func applyManifest(file string) {
 		return
 	}
 
-	// Appliquer les objets Kubernetes au cluster
-	gvr := obj.GroupVersionKind().GroupVersion().WithResource("mutatingwebhookconfigurations")
-	_, err = kubeClient.GetDynamicClient().Resource(gvr).Apply(context.TODO(), obj.GetName(), obj, metav1.ApplyOptions{Force: true, FieldManager: "kumi-webhook"})
+	// convert the unstructured object to typed object
+	mutatingWebhookConfiguration, err := kubeclient.DecodeUnstructured[v1.MutatingWebhookConfigurationApplyConfiguration](obj)
 	if err != nil {
+		warningLogger.Printf("Failed to decode manifest: %v\n", err)
+		return
+	}
+
+	// apply the manifest
+	if _, err := kubeClient.AdmissionregistrationV1().MutatingWebhookConfigurations().Apply(
+		context.TODO(),
+		&mutatingWebhookConfiguration,
+		metav1.ApplyOptions{Force: true, FieldManager: "kumi-webhook"},
+	); err != nil {
 		warningLogger.Printf("Failed to apply manifest: %v\n", err)
 		return
 	}

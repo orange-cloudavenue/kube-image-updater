@@ -21,7 +21,7 @@ import (
 
 type locks map[string]*sync.RWMutex
 
-func initScheduler(ctx context.Context, k *kubeclient.Client) {
+func initScheduler(ctx context.Context, k kubeclient.Interface) {
 	l := make(locks)
 
 	// Start Crontab client
@@ -122,7 +122,7 @@ func initScheduler(ctx context.Context, k *kubeclient.Client) {
 							AvailableTags: tagsAvailable,
 						}, &image, action.Data)
 						if err := a.Execute(ctx); err != nil {
-							log.Errorf("Error executing action: %v", err)
+							log.Errorf("Error executing action(%s): %v", action.Type, err)
 							continue
 						}
 					}

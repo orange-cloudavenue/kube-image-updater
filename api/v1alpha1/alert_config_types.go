@@ -27,7 +27,6 @@ type (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=alertconfig,scope=Namespaced
 
 type AlertConfig struct {
 	metav1.TypeMeta   `json:",inline"`

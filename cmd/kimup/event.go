@@ -57,7 +57,7 @@ func refreshIfRequired(an annotations.Annotation, image v1alpha1.Image) {
 	}
 }
 
-func setTagIfNotExists(ctx context.Context, kubeClient *kubeclient.Client, an annotations.Annotation, image *v1alpha1.Image) error {
+func setTagIfNotExists(ctx context.Context, kubeClient kubeclient.Interface, an annotations.Annotation, image *v1alpha1.Image) error {
 	if an.Tag().IsNull() {
 		a, err := actions.GetAction(actions.Apply)
 		if err != nil {
