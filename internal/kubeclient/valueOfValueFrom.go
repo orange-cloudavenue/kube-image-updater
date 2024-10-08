@@ -18,7 +18,7 @@ func (c *Client) GetValueOrValueFrom(ctx context.Context, namespace string, v v1
 
 	// Read from configmap
 	if v.ValueFrom.ConfigMapKeyRef != nil {
-		cm, err := c.c.CoreV1().ConfigMaps(namespace).Get(ctx, v.ValueFrom.ConfigMapKeyRef.Name, metav1.GetOptions{})
+		cm, err := c.CoreV1().ConfigMaps(namespace).Get(ctx, v.ValueFrom.ConfigMapKeyRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
@@ -32,7 +32,7 @@ func (c *Client) GetValueOrValueFrom(ctx context.Context, namespace string, v v1
 
 	// Read from secret
 	if v.ValueFrom.SecretKeyRef != nil {
-		secret, err := c.c.CoreV1().Secrets(namespace).Get(ctx, v.ValueFrom.SecretKeyRef.Name, metav1.GetOptions{})
+		secret, err := c.CoreV1().Secrets(namespace).Get(ctx, v.ValueFrom.SecretKeyRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
@@ -55,9 +55,9 @@ func (c *Client) GetValueOrValueFrom(ctx context.Context, namespace string, v v1
 	}
 
 	if v.ValueFrom.AlertConfigRef != nil {
-		alert, err := c.Alert().Get(ctx, v.ValueFrom.AlertConfigRef.Name)
+		alert, err := c.Alert().Get(ctx, namespace, v.ValueFrom.AlertConfigRef.Name)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("error getting alert config %s: %w", v.ValueFrom.AlertConfigRef.Name, err)
 		}
 
 		return alert, nil

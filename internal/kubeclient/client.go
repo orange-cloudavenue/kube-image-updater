@@ -10,8 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -20,10 +19,29 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 )
 
+var _ Interface = &Client{}
+
 type (
 	Client struct {
-		c *kubernetes.Clientset
-		d *dynamic.DynamicClient
+		kubernetes.Interface
+		d dynamic.Interface
+	}
+
+	Interface interface {
+		InterfaceKubernetes
+		InterfaceKimup
+	}
+
+	InterfaceKubernetes interface {
+		kubernetes.Interface
+		DynamicResource(resource schema.GroupVersionResource) dynamic.NamespaceableResourceInterface
+		GetPullSecretsForImage(ctx context.Context, image v1alpha1.Image) (auths K8sDockerRegistrySecretData, err error)
+		GetValueOrValueFrom(ctx context.Context, namespace string, v v1alpha1.ValueOrValueFrom) (any, error)
+	}
+
+	InterfaceKimup interface {
+		Image() *ImageObj
+		Alert() *AlertObj
 	}
 )
 
@@ -35,7 +53,7 @@ func init() {
 
 // New creates a new kubernetes client
 // kubeConfigPath is the path to the kubeconfig file (empty for in-cluster)
-func New(kubeConfigPath string) (*Client, error) {
+func New(kubeConfigPath string) (Interface, error) {
 	config, err := getConfig(kubeConfigPath)
 	if err != nil {
 		return nil, err
@@ -56,7 +74,10 @@ func NewFromRestConfig(config *rest.Config) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{c: client, d: dynamicClient}, nil
+	return &Client{
+		Interface: client,
+		d:         dynamicClient,
+	}, nil
 }
 
 func getConfig(kubeConfigPath string) (config *rest.Config, err error) {
@@ -69,36 +90,9 @@ func getConfig(kubeConfigPath string) (config *rest.Config, err error) {
 	return rest.InClusterConfig()
 }
 
-// GetKubeClient returns the standard kubernetes client
-func (c *Client) GetKubeClient() *kubernetes.Clientset {
-	return c.c
-}
-
-// GetDynamicClient returns the dynamic kubernetes client
-func (c *Client) GetDynamicClient() *dynamic.DynamicClient {
-	return c.d
-}
-
-type UnstructuredFunc interface {
-	UnstructuredContent() map[string]interface{}
-}
-
-func decodeUnstructured[T any](v UnstructuredFunc) (t T, err error) {
-	if err := runtime.DefaultUnstructuredConverter.
-		FromUnstructured(v.UnstructuredContent(), &t); err != nil {
-		return t, fmt.Errorf("failed to convert resource: %w", err)
-	}
-
-	return
-}
-
-func encodeUnstructured[T any](t T) (*unstructured.Unstructured, error) {
-	x, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&t)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert resource: %w", err)
-	}
-
-	return &unstructured.Unstructured{Object: x}, nil
+// DynamicResource returns a dynamic resource
+func (c *Client) DynamicResource(resource schema.GroupVersionResource) dynamic.NamespaceableResourceInterface {
+	return c.d.Resource(resource)
 }
 
 type K8sDockerRegistrySecretData struct {
@@ -116,7 +110,7 @@ func (c *Client) GetPullSecretsForImage(ctx context.Context, image v1alpha1.Imag
 	auths.Auths = make(map[string]K8sDockerRegistrySecret)
 
 	for _, ip := range image.Spec.ImagePullSecrets {
-		secret, err := c.GetKubeClient().CoreV1().Secrets(image.Namespace).Get(ctx, ip.Name, metav1.GetOptions{})
+		secret, err := c.CoreV1().Secrets(image.Namespace).Get(ctx, ip.Name, metav1.GetOptions{})
 		if err != nil {
 			continue
 		}

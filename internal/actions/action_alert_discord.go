@@ -31,7 +31,7 @@ func init() {
 
 // Execute sends the alert message to the Discord channel.
 func (a *alertDiscord) Execute(ctx context.Context) error {
-	alertConfig, err := a.k.GetValueOrValueFrom(ctx, a.Namespace, a.data)
+	alertConfig, err := a.k.GetValueOrValueFrom(ctx, a.image.Namespace, a.data)
 	if err != nil {
 		return err
 	}
@@ -52,12 +52,12 @@ func (a *alertDiscord) Execute(ctx context.Context) error {
 
 	sender, err := s.CreateSender(fmt.Sprintf("discord://%s@%s?splitlines=no", token, webhookID))
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating Discord sender: %v", err)
 	}
 
 	message, err := a.Render()
 	if err != nil {
-		return err
+		return fmt.Errorf("error rendering alert message: %v", err)
 	}
 
 	log.Debugf("Sending Discord alert")

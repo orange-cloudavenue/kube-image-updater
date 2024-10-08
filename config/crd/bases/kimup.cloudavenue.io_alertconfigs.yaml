@@ -4,13 +4,13 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
-  name: alertconfig.kimup.cloudavenue.io
+  name: alertconfigs.kimup.cloudavenue.io
 spec:
   group: kimup.cloudavenue.io
   names:
     kind: AlertConfig
     listKind: AlertConfigList
-    plural: alertconfig
+    plural: alertconfigs
     singular: alertconfig
   scope: Namespaced
   versions:

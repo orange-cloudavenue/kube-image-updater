@@ -15,16 +15,20 @@ import (
 
 type (
 	ImageObj struct {
-		c           *Client
+		InterfaceKubernetes
 		imageClient dynamic.NamespaceableResourceInterface
 	}
 )
 
 // Image returns an image object
 func (c *Client) Image() *ImageObj {
+	return NewImage(c)
+}
+
+func NewImage(k InterfaceKubernetes) *ImageObj {
 	return &ImageObj{
-		c: c,
-		imageClient: c.d.Resource(schema.GroupVersionResource{
+		InterfaceKubernetes: k,
+		imageClient: k.DynamicResource(schema.GroupVersionResource{
 			Group:    v1alpha1.GroupVersion.Group,
 			Version:  v1alpha1.GroupVersion.Version,
 			Resource: "images",

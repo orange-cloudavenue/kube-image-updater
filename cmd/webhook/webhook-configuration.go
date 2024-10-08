@@ -15,10 +15,10 @@ import (
 // createOrUpdateMutatingWebhookConfiguration creates or updates the mutating webhook configuration
 // for the webhook service. The CA is generated and used for the webhook.
 // This function create the request to the Kubernetes API server to create or update the mutating webhook configuration.
-func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookService, webhookNamespace string, k *client.Client) error {
+func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookService, webhookNamespace string, k client.Interface) error {
 	infoLogger.Println("Initializing the kube client...")
 
-	mutatingWebhookConfigV1Client := k.GetKubeClient().AdmissionregistrationV1()
+	mutatingWebhookConfigV1Client := k.AdmissionregistrationV1()
 
 	var clientConfig admissionregistrationv1.WebhookClientConfig
 	switch insideCluster {
