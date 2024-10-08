@@ -6,4 +6,8 @@ type (
 	AlertDiscord struct {
 		v1alpha1.AlertConfig
 	}
+
+	AlertEmail struct {
+		v1alpha1.AlertConfig
+	}
 )
