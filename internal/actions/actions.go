@@ -22,6 +22,7 @@ var actions = make(_actions)
 const (
 	Apply        models.ActionName = "apply"
 	AlertDiscord models.ActionName = "alert-discord"
+	AlertEmail   models.ActionName = "alert-email"
 )
 
 func register(name models.ActionName, action models.ActionInterface) {

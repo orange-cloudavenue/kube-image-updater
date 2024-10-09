@@ -14,7 +14,7 @@ Kimup provide multiple actions to alert you when an image is updated.
 List of available alerts :
 
 * [Discord](discord.md)
-* Email (coming soon)
+* [Email](email.md)
 * Slack (coming soon)
 * Webhook (coming soon)
 

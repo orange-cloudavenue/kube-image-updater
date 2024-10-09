@@ -22,6 +22,7 @@ nav:
     - Alerts:
       - Getting Started: actions/alerts/getting-start.md
       - Discord: actions/alerts/discord.md
+      - Email: actions/alerts/email.md
 
 # ! Other settings
 
