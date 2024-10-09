@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/mock"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -21,7 +22,7 @@ type FakeKubeClient struct {
 	kubeclient.InterfaceKubernetes
 }
 
-func NewFakeKubeClient() kubeclient.Interface {
+func NewFakeKubeClient() *FakeKubeClient {
 	return &FakeKubeClient{
 		InterfaceKubernetes: &kubeclient.Client{
 			Interface: kFake.NewSimpleClientset(),
@@ -49,4 +50,24 @@ func (f *FakeKubeClient) Image() *kubeclient.ImageObj {
 
 func (f *FakeKubeClient) Alert() *kubeclient.AlertObj {
 	return kubeclient.NewAlert(f)
+}
+
+func (f *FakeKubeClient) CreateFakeImage(image v1alpha1.Image) error {
+	u, err := kubeclient.EncodeUnstructured(image)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.DynamicResource(schema.GroupVersionResource{
+		Group:    v1alpha1.GroupVersion.Group,
+		Version:  v1alpha1.GroupVersion.Version,
+		Resource: "images",
+	}).
+		Namespace(image.Namespace).
+		Create(
+			context.Background(),
+			u,
+			v1.CreateOptions{},
+		)
+	return err
 }

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	s "github.com/containrrr/shoutrrr"
-	log "github.com/sirupsen/logrus"
+	"github.com/containrrr/shoutrrr/pkg/types"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
@@ -31,18 +30,18 @@ func init() {
 
 // Execute sends the alert message via email.
 func (a *alertEmail) Execute(ctx context.Context) error {
-	alertConfig, err := a.k.GetValueOrValueFrom(ctx, a.Namespace, a.data)
+	alertConfig, err := a.k.GetValueOrValueFrom(ctx, a.image.Namespace, a.data)
 	if err != nil {
 		return err
 	}
 
 	aC, ok := alertConfig.(v1alpha1.AlertConfig)
-	if ok {
-		a.AlertEmail = models.AlertEmail{
-			AlertConfig: aC,
-		}
-	} else {
+	if !ok {
 		return fmt.Errorf("invalid alert configuration")
+	}
+
+	a.AlertEmail = models.AlertEmail{
+		AlertConfig: aC,
 	}
 
 	// Construct URL
@@ -50,7 +49,9 @@ func (a *alertEmail) Execute(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to construct URL: %w", err)
 	}
-	sender, err := s.CreateSender(url)
+
+	// Create sender
+	sender, err := newAlertSender(url)
 	if err != nil {
 		return fmt.Errorf("failed to create sender: %w", err)
 	}
@@ -61,12 +62,11 @@ func (a *alertEmail) Execute(ctx context.Context) error {
 		return fmt.Errorf("failed to render message: %w", err)
 	}
 
-	log.Debugf("Sending email alert to %s", strings.Join(a.Spec.Email.ToAddress, ","))
 	var bigErr error
-	if errS := sender.Send(message, nil); errS != nil {
+	if errS := sender.Send(message, &types.Params{}); errS != nil {
 		for _, e := range errS {
 			if e != nil {
-				bigErr = fmt.Errorf("%v: %v", bigErr, e)
+				bigErr = fmt.Errorf("failed to send email: %w", e)
 			}
 		}
 
@@ -107,19 +107,19 @@ func (a *alertEmail) constructURL(ctx context.Context) (string, error) {
 	url := "smtp://"
 
 	// * Username
-	if username, err := a.k.GetValueOrValueFrom(ctx, a.Namespace, a.Spec.Email.Username); err == nil {
+	if username, err := a.k.GetValueOrValueFrom(ctx, a.GetNamespace(), a.Spec.Email.Username); err == nil {
 		url += username.(string)
 		// * Password
-		if password, err := a.k.GetValueOrValueFrom(ctx, a.Namespace, a.Spec.Email.Password); err == nil {
+		if password, err := a.k.GetValueOrValueFrom(ctx, a.GetNamespace(), a.Spec.Email.Password); err == nil {
 			url += ":" + password.(string) + "@"
 		}
 	}
 
 	// * Host
-	if host, err := a.k.GetValueOrValueFrom(ctx, a.Namespace, a.Spec.Email.Host); err == nil {
+	if host, err := a.k.GetValueOrValueFrom(ctx, a.GetNamespace(), a.Spec.Email.Host); err == nil && host.(string) != "" {
 		url += host.(string)
 		// * Port
-		if port, err := a.k.GetValueOrValueFrom(ctx, a.Namespace, a.Spec.Email.Port); err == nil {
+		if port, err := a.k.GetValueOrValueFrom(ctx, a.GetNamespace(), a.Spec.Email.Port); err == nil {
 			url += ":" + port.(string)
 		}
 	} else {
