@@ -31,7 +31,7 @@ import (
 // - webhookServiceName
 // - webhookServiceName.webhookNamespace
 // - webhookServiceName.webhookNamespace.svc
-func generateTLS() (tls.Certificate, *bytes.Buffer) {
+func generateTLS() (keyPair tls.Certificate, caPEM *bytes.Buffer, err error) {
 	// generate dns names
 	dnsNames := []string{
 		webhookServiceName,
@@ -43,14 +43,16 @@ func generateTLS() (tls.Certificate, *bytes.Buffer) {
 
 	caPEM, certPEM, certKeyPEM, err := generateCert([]string{webhookBase}, dnsNames, commonName)
 	if err != nil {
-		errorLogger.Fatalf("Failed to generate ca and certificate key pair: %v", err)
+		errorLogger.Printf("Failed to generate ca and certificate key pair: %v", err)
+		return
 	}
 
-	pair, err := tls.X509KeyPair(certPEM.Bytes(), certKeyPEM.Bytes())
+	keyPair, err = tls.X509KeyPair(certPEM.Bytes(), certKeyPEM.Bytes())
 	if err != nil {
-		errorLogger.Fatalf("Failed to load certificate key pair: %v", err)
+		errorLogger.Printf("Failed to load certificate key pair: %v", err)
+		return
 	}
-	return pair, caPEM
+	return
 }
 
 // generateCert generates a self-signed certificate with the given organizations, DNS names, and common name
@@ -58,7 +60,7 @@ func generateTLS() (tls.Certificate, *bytes.Buffer) {
 // The certificate is signed by the CA certificate
 // The CA certificate is generated with the given organizations
 // it resurns the CA, certificate and private key in PEM format.
-func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error) {
+func generateCert(orgs, dnsNames []string, commonName string) (caPEM, newCertPEM, newPrivateKeyPEM *bytes.Buffer, err error) {
 	// init CA config
 	ca := &x509.Certificate{
 		SerialNumber:          big.NewInt(2022),
@@ -74,21 +76,27 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 	// generate private key for CA
 	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
+		errorLogger.Printf("Failed to generate private key for CA: %v", err)
 		return nil, nil, nil, err
 	}
 
 	// create the CA certificate
 	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivateKey.PublicKey, caPrivateKey)
 	if err != nil {
+		errorLogger.Printf("Failed to create CA certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
 	// CA certificate with PEM encoded
-	caPEM := new(bytes.Buffer)
-	_ = pem.Encode(caPEM, &pem.Block{
+	caPEM = new(bytes.Buffer)
+	err = pem.Encode(caPEM, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: caBytes,
 	})
+	if err != nil {
+		errorLogger.Printf("Failed to encode CA certificate: %v", err)
+		return nil, nil, nil, err
+	}
 
 	// print CA certificate if insideCluster is false
 	if !insideCluster {
@@ -96,7 +104,7 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 		time.Sleep(2 * time.Second)
 		applyManifest(manifestWebhookPath)
 
-		debugLogger.Printf("CA certificate Encoded: %s", base64.StdEncoding.EncodeToString(caPEM.Bytes()))
+		// debugLogger.Printf("CA certificate Encoded: %s", base64.StdEncoding.EncodeToString(caPEM.Bytes()))
 	}
 
 	// new certificate config
@@ -116,28 +124,38 @@ func generateCert(orgs, dnsNames []string, commonName string) (*bytes.Buffer, *b
 	// generate new private key
 	newPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
+		errorLogger.Printf("Failed to generate private key for new certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
 	// sign the new certificate
 	newCertBytes, err := x509.CreateCertificate(rand.Reader, newCert, ca, &newPrivateKey.PublicKey, caPrivateKey)
 	if err != nil {
+		errorLogger.Printf("Failed to create new certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
 	// new certificate with PEM encoded
-	newCertPEM := new(bytes.Buffer)
-	_ = pem.Encode(newCertPEM, &pem.Block{
+	newCertPEM = new(bytes.Buffer)
+	err = pem.Encode(newCertPEM, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: newCertBytes,
 	})
+	if err != nil {
+		errorLogger.Printf("Failed to encode new certificate: %v", err)
+		return nil, nil, nil, err
+	}
 
 	// new private key with PEM encoded
-	newPrivateKeyPEM := new(bytes.Buffer)
-	_ = pem.Encode(newPrivateKeyPEM, &pem.Block{
+	newPrivateKeyPEM = new(bytes.Buffer)
+	err = pem.Encode(newPrivateKeyPEM, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(newPrivateKey),
 	})
+	if err != nil {
+		errorLogger.Printf("Failed to encode new private key: %v", err)
+		return nil, nil, nil, err
+	}
 
 	return caPEM, newCertPEM, newPrivateKeyPEM, nil
 }

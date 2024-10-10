@@ -18,7 +18,7 @@ import (
 )
 
 // func serveHandler
-func serveHandler(w http.ResponseWriter, r *http.Request) {
+func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	// start the timer
 	timer := prometheus.NewTimer(promHTTPDuration)
 	defer timer.ObserveDuration()

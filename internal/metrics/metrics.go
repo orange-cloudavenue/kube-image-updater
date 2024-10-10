@@ -56,17 +56,3 @@ func NewSummary(name, help string) prometheus.Summary {
 		Help: help,
 	})
 }
-
-func init() {
-	// flag.StringVar(&metricsPort, "metrics-port", metricsPort, "Metrics server port. ex: :9080")
-	// flag.StringVar(&metricsPath, "metrics-path", metricsPath, "Metrics server path. ex: /metrics")
-}
-
-// ServeProm starts a Prometheus metrics server
-// TODO - Add context to cancel the server
-// in order to stop the server gracefully
-// func Start(ctx context.Context) (err error) {
-// 	s := httpserver.New(httpserver.WithAddr(metricsPort))
-// 	s.AddGetRoutes(metricsPath, promhttp.Handler())
-// 	return s.Start(ctx)
-// }
