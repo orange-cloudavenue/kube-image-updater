@@ -49,7 +49,7 @@ func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookServ
 			Name: webhookConfigName,
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{{
-			Name:                    webhookService + "." + webhookNamespace + ".svc",
+			Name:                    webhookService + "." + webhookNamespace,
 			AdmissionReviewVersions: []string{"v1", "v1beta1"},
 			SideEffects:             &sideEffect,
 			ClientConfig:            clientConfig,
@@ -58,11 +58,14 @@ func createOrUpdateMutatingWebhookConfiguration(caPEM *bytes.Buffer, webhookServ
 				{
 					Operations: []admissionregistrationv1.OperationType{
 						admissionregistrationv1.Update,
+						admissionregistrationv1.Create,
 					},
 					Rule: admissionregistrationv1.Rule{
 						APIGroups:   []string{""},
 						APIVersions: []string{"v1"},
 						Resources:   []string{"pods"},
+						// TODO - add namespace scope
+						// Scope:       "*",
 					},
 				},
 			},

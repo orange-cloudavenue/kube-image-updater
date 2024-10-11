@@ -84,7 +84,7 @@ func init() {
 	// * Metrics
 	flag.Bool(models.MetricsFlagName, false, "Enable the metrics server.")
 	flag.StringVar(&metricsPort, models.MetricsPortFlagName, models.MetricsDefaultAddr, "Metrics server port.")
-	flag.StringVar(&metricsPath, models.MetricsPathFlagName, models.HealthzDefaultPath, "Metrics server path.")
+	flag.StringVar(&metricsPath, models.MetricsPathFlagName, models.MetricsDefaultPath, "Metrics server path.")
 }
 
 // Function to initialize application, return app struct and a func waitgroup.

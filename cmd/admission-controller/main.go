@@ -4,13 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -18,15 +15,14 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
-	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 )
 
 var (
 	insideCluster bool = true // running inside k8s cluster
 
-	webhookNamespace   string = "example.com"
-	webhookServiceName string = "your"
-	webhookConfigName  string = "webhookconfig"
+	webhookNamespace   string = "nip.io"
+	webhookServiceName string = "192-168-1-23"
+	webhookConfigName  string = "mutating-webhook-configuration"
 	webhookPathMutate  string = "/mutate"
 	webhookPort        string = ":8443"
 	webhookBase               = webhookServiceName + "." + webhookNamespace
@@ -36,13 +32,7 @@ var (
 	deserializer  = codecs.UniversalDeserializer()
 
 	kubeClient          client.Interface
-	manifestWebhookPath string = "./config/manifests/mutatingWebhookConfiguration.yaml"
-
-	// Prometheus metrics
-	promHTTPRequestsTotal prometheus.Counter   = metrics.NewCounter("http_requests_total", "The total number of handled HTTP requests.")
-	promHTTPErrorsTotal   prometheus.Counter   = metrics.NewCounter("http_errors_total", "The total number of handled HTTP errors.")
-	promHTTPDuration      prometheus.Histogram = metrics.NewHistogram("http_response_time_seconds", "The duration in seconds of HTTP requests.")
-	promPatchTotal        prometheus.Counter   = metrics.NewCounter("patch_total", "The total number of requests to a patch.")
+	manifestWebhookPath string = "./examples/mutatingWebhookConfiguration.yaml"
 )
 
 func init() {
@@ -96,14 +86,7 @@ func main() {
 	}
 
 	// * Config the webhook server
-	a, waitHTTP := httpserver.Init(ctx, httpserver.WithCustomHandlerForHealth(
-		func() (bool, error) {
-			_, err := net.DialTimeout("tcp", ":4444", 5*time.Second)
-			if err != nil {
-				return false, err
-			}
-			return true, nil
-		}))
+	a, waitHTTP := httpserver.Init(ctx)
 
 	s, err := a.Add("webhook", httpserver.WithTLS(tlsC), httpserver.WithAddr(webhookPort))
 	if err != nil {
