@@ -15,8 +15,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/orange-cloudavenue/kube-image-updater/internal/health"
 )
 
 var _ InterfaceServer = &app{}
@@ -48,26 +46,37 @@ type (
 	}
 
 	// OptionsHTTP is a function to set the http server
-	Option       func(s *server)
+	Option func(s *server)
+	// OptionsServer is a function to disable some server
 	OptionServer func(a *app)
 
 	CancelFunc func()
+
+	// Function to check the health of the application
+	HealthzFunc func() (bool, error)
 )
 
 var (
-	defaultPortHealth  string = ":9081"
-	defaultPathHealth  string = "/healthz"
-	defaultPortMetrics string = ":9080"
-	defaultPathMetrics string = "/metrics"
-	defaultAddr        string = ":8080"
-	timeoutR                  = 5 * time.Second
+	DefaultPortHealth  string      = ":9081"
+	DefaultPathHealth  string      = "/healthz"
+	DefaultPortMetrics string      = ":9080"
+	DefaultPathMetrics string      = "/metrics"
+	defaultAddr        string      = ":8080"
+	timeoutR                       = 5 * time.Second
+	DefaultFuncHealthz HealthzFunc = func() (bool, error) {
+		_, err := net.DialTimeout("tcp", DefaultPortHealth, timeoutR)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
 )
 
 func init() {
-	flag.StringVar(&defaultPortHealth, "health-port", defaultPortHealth, "Health server port. ex: :9081")
-	flag.StringVar(&defaultPathHealth, "health-path", defaultPathHealth, "Health server path. ex: /healthz")
-	flag.StringVar(&defaultPortMetrics, "metrics-port", defaultPortMetrics, "Metrics server port. ex: :9080")
-	flag.StringVar(&defaultPathMetrics, "metrics-path", defaultPathMetrics, "Metrics server path. ex: /metrics")
+	flag.StringVar(&DefaultPortHealth, "health-port", DefaultPortHealth, "Health server port. ex: :9081")
+	flag.StringVar(&DefaultPathHealth, "health-path", DefaultPathHealth, "Health server path. ex: /healthz")
+	flag.StringVar(&DefaultPortMetrics, "metrics-port", DefaultPortMetrics, "Metrics server port. ex: :9080")
+	flag.StringVar(&DefaultPathMetrics, "metrics-path", DefaultPathMetrics, "Metrics server path. ex: /metrics")
 }
 
 // Function to initialize application, return app struct and a func waitgroup.
@@ -81,6 +90,7 @@ func Init(ctx context.Context, opts ...OptionServer) (InterfaceServer, CancelFun
 	}
 
 	a.list["health"] = a.createHealth()
+	WithCustomHandlerForHealth(DefaultFuncHealthz)(a)
 	a.list["metrics"] = a.createMetrics()
 
 	// create a new server for health
@@ -111,15 +121,15 @@ func DisableMetrics() OptionServer {
 
 // Function to create a new server for health
 func (a *app) createHealth() *server {
-	s := a.new(WithAddr(defaultPortHealth))
-	s.Config.Get(defaultPathHealth, health.Handler().ServeHTTP)
+	s := a.new(WithAddr(DefaultPortHealth))
+	// s.Config.Get(DefaultPathHealth, health.DefaultHandler().ServeHTTP))
 	return s
 }
 
 // Function to create a new server for metrics
 func (a *app) createMetrics() *server {
-	s := a.new(WithAddr(defaultPortMetrics))
-	s.Config.Get(defaultPathMetrics, promhttp.Handler().ServeHTTP)
+	s := a.new(WithAddr(DefaultPortMetrics))
+	s.Config.Get(DefaultPathMetrics, promhttp.Handler().ServeHTTP)
 	return s
 }
 
@@ -243,4 +253,27 @@ func (a *app) checkIfPortIsAlreadyUsed(s *server) bool {
 		}
 	}
 	return false
+}
+
+// Function WithCustomHandlerForHealth return a function Option
+// Function take in parameter a function that return a boolean and an error
+// and the endpoint path (e.g. /healthz)
+func WithCustomHandlerForHealth(req HealthzFunc) OptionServer {
+	return func(a *app) {
+		a.list["health"].Config.Get(DefaultPathHealth, func(w http.ResponseWriter, r *http.Request) {
+			ok, err := req()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if ok {
+				_, err = w.Write([]byte(`{"status":"ok"}`))
+			} else {
+				_, err = w.Write([]byte(`{"status":"ko"}`))
+			}
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		})
+	}
 }
