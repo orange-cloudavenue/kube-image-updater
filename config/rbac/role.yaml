@@ -5,10 +5,44 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - kimup.cloudavenue.io
   resources:
   - alertconfigs
   - images
+  - kimups
   verbs:
   - create
   - delete
@@ -22,6 +56,7 @@ rules:
   resources:
   - alertconfigs/finalizers
   - images/finalizers
+  - kimups/finalizers
   verbs:
   - update
 - apiGroups:
@@ -29,6 +64,7 @@ rules:
   resources:
   - alertconfigs/status
   - images/status
+  - kimups/status
   verbs:
   - get
   - patch
