@@ -160,6 +160,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controller.KimupReconciler{
+		Client:        mgr.GetClient(),
+		KubeAPIClient: kubeAPIClient,
+		Scheme:        mgr.GetScheme(),
+		Recorder:      mgr.GetEventRecorderFor("kimup-operator"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Kimup")
+		os.Exit(1)
+	}
+
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

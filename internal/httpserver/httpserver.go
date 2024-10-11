@@ -15,6 +15,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
 var _ InterfaceServer = &app{}
@@ -57,14 +59,15 @@ type (
 )
 
 var (
-	DefaultPortHealth  string      = ":9081"
-	DefaultPathHealth  string      = "/healthz"
-	DefaultPortMetrics string      = ":9080"
-	DefaultPathMetrics string      = "/metrics"
+	healthzPort string = ""
+	healthzPath string = ""
+	metricsPort string = ""
+	metricsPath string = ""
+
 	defaultAddr        string      = ":8080"
 	timeoutR                       = 5 * time.Second
 	DefaultFuncHealthz HealthzFunc = func() (bool, error) {
-		_, err := net.DialTimeout("tcp", DefaultPortHealth, timeoutR)
+		_, err := net.DialTimeout("tcp", models.HealthzDefaultAddr, timeoutR)
 		if err != nil {
 			return false, err
 		}
@@ -73,15 +76,15 @@ var (
 )
 
 func init() {
-	flag.StringVar(&DefaultPortHealth, "health-port", DefaultPortHealth, "Health server port. ex: :9081")
-	flag.StringVar(&DefaultPathHealth, "health-path", DefaultPathHealth, "Health server path. ex: /healthz")
-	flag.StringVar(&DefaultPortMetrics, "metrics-port", DefaultPortMetrics, "Metrics server port. ex: :9080")
-	flag.StringVar(&DefaultPathMetrics, "metrics-path", DefaultPathMetrics, "Metrics server path. ex: /metrics")
+	flag.StringVar(&healthzPort, models.HealthzPortFlagName, models.HealthzDefaultAddr, fmt.Sprintf("Healthz server port. (ex: %s)", models.HealthzDefaultAddr))
+	flag.StringVar(&healthzPath, models.HealthzPathFlagName, models.HealthzDefaultPath, fmt.Sprintf("Healthz server path. (ex: %s)", models.HealthzDefaultPath))
+	flag.StringVar(&metricsPort, models.MetricsPortFlagName, models.MetricsDefaultAddr, fmt.Sprintf("Metrics server port. (ex: %s)", models.MetricsDefaultAddr))
+	flag.StringVar(&metricsPath, models.MetricsPathFlagName, models.HealthzDefaultPath, fmt.Sprintf("Metrics server path. (ex: %s)", models.MetricsDefaultPath))
 }
 
 // Function to initialize application, return app struct and a func waitgroup.
 // The app contains a map of server.
-// By default, the app contains a health and metrics server.
+// By default, the app contains a healthz and metrics server.
 func Init(ctx context.Context, opts ...OptionServer) (InterfaceServer, CancelFunc) {
 	a := &app{
 		list: make(map[string]*server),
@@ -121,15 +124,15 @@ func DisableMetrics() OptionServer {
 
 // Function to create a new server for health
 func (a *app) createHealth() *server {
-	s := a.new(WithAddr(DefaultPortHealth))
+	s := a.new(WithAddr(healthzPort))
 	// s.Config.Get(DefaultPathHealth, health.DefaultHandler().ServeHTTP))
 	return s
 }
 
 // Function to create a new server for metrics
 func (a *app) createMetrics() *server {
-	s := a.new(WithAddr(DefaultPortMetrics))
-	s.Config.Get(DefaultPathMetrics, promhttp.Handler().ServeHTTP)
+	s := a.new(WithAddr(metricsPort))
+	s.Config.Get(metricsPath, promhttp.Handler().ServeHTTP)
 	return s
 }
 
@@ -260,13 +263,13 @@ func (a *app) checkIfPortIsAlreadyUsed(s *server) bool {
 // and the endpoint path (e.g. /healthz)
 func WithCustomHandlerForHealth(req HealthzFunc) OptionServer {
 	return func(a *app) {
-		a.list["health"].Config.Get(DefaultPathHealth, func(w http.ResponseWriter, r *http.Request) {
+		a.list["health"].Config.Get(healthzPath, func(w http.ResponseWriter, r *http.Request) {
 			ok, err := req()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			w.Header().Set("Content-Type", "application/json")
-			if ok {
+			if !ok {
 				_, err = w.Write([]byte(`{"status":"ok"}`))
 			} else {
 				_, err = w.Write([]byte(`{"status":"ko"}`))
