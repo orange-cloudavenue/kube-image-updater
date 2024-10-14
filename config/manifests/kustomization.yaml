@@ -1,8 +1,2 @@
 resources:
-# For outside of the cluster
-# - service.yaml
-- mutatingWebhookConfiguration.yaml
 - deployments.yaml
-
-
-   

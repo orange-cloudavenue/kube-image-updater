@@ -15,15 +15,15 @@ const (
 	KimupControllerName  = KimupName + "-" + KimupController
 	KimupControllerImage = BaseKimupImage + KimupControllerName
 
-	KimupWebhook      = "webhook"
-	KimupWebhookName  = KimupName + "-" + KimupWebhook
-	KimupWebhookImage = BaseKimupImage + KimupWebhookName
+	KimupAdmissionController      = "admission-controler"
+	KimupAdmissionControllerName  = KimupName + "-" + KimupAdmissionController
+	KimupAdmissionControllerImage = BaseKimupImage + KimupAdmissionControllerName
 )
 
 const (
-	PhaseResourcesCreated string = "resources-created"
+	StateResourcesCreated string = "resources-created"
 
-	PhaseReady string = "ready"
+	StateReady string = "ready"
 )
 
 const (

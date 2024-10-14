@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,7 +12,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
@@ -44,6 +47,23 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// * Config the metrics and healthz server
+	a, waitHTTP := httpserver.Init(ctx, httpserver.WithCustomHandlerForHealth(
+		func() (bool, error) {
+			// TODO improve
+			_, err := net.DialTimeout("tcp", models.HealthzDefaultAddr, 5*time.Second)
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		}))
+
+	if err := a.Run(); err != nil {
+		log.Errorf("Failed to start HTTP servers: %v", err)
+		// send signal to stop the program
+		c <- syscall.SIGINT
+	}
 
 	initScheduler(ctx, k)
 
@@ -117,4 +137,5 @@ func main() {
 
 	<-c
 	cancel()
+	waitHTTP()
 }

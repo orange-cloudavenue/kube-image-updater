@@ -79,14 +79,10 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
 
-	// homedir for kubeconfig
-	homedir, err := os.UserHomeDir()
+	// kubernetes golang library provide flag "kubeconfig" to specify the path to the kubeconfig file
+	kubeClient, err = client.New(flag.Lookup("kubeconfig").Value.String())
 	if err != nil {
-		panic(err)
-	}
-	kubeClient, err = client.New(homedir + "/.kube/config")
-	if err != nil {
-		panic(err)
+		log.Panicf("Error creating kubeclient: %v", err)
 	}
 
 	// * Webhook server
