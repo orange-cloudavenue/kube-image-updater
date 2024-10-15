@@ -1,0 +1,88 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kimup-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
+- apiGroups:
+  - kimup.cloudavenue.io
+  resources:
+  - alertconfigs
+  - images
+  - kimups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
+- apiGroups:
+  - kimup.cloudavenue.io
+  resources:
+  - alertconfigs/finalizers
+  - images/finalizers
+  - kimups/finalizers
+  verbs:
+  - update
+
+- apiGroups:
+  - kimup.cloudavenue.io
+  resources:
+  - alertconfigs/status
+  - images/status
+  - kimups/status
+  verbs:
+  - get
+  - patch
+  - update

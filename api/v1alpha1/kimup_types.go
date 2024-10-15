@@ -27,11 +27,13 @@ import (
 type (
 	// KimupSpec defines the desired state of Kimup
 	KimupSpec struct {
+		// TODO add namespace and serviceaccount settings
+
 		// +kubebuilder:validation:Optional
 		Controller *KimupControllerSpec `json:"controller"`
 
 		// +kubebuilder:validation:Optional
-		Webhook *KimupWebhookSpec `json:"webhook"`
+		AdmissionController *KimupAdmissionControllerSpec `json:"admissionController"`
 	}
 
 	// ! Controller
@@ -44,9 +46,9 @@ type (
 		// Service *KimupServiceSpec `json:"service,omitempty"`
 	}
 
-	// ! Webhook
+	// ! AdmissionController
 
-	KimupWebhookSpec struct {
+	KimupAdmissionControllerSpec struct {
 		// +kubebuilder:validation:Optional
 		// +kubebuilder:default:=Deployment
 		// +kubebuilder:validation:Enum=Deployment;DaemonSet
@@ -54,7 +56,7 @@ type (
 
 		// +kubebuilder:validation:Optional
 		// +kubebuilder:default:=3
-		// +kubebuilder:description: Number of replicas for the webhook deployment. (Only for Deployment)
+		// +kubebuilder:description: Number of replicas (default: 3) for the admissionController deployment. (Only for Deployment)
 		Replicas int32 `json:"replicas,omitempty"`
 
 		KimupInstanceSpec `json:",inline"`
@@ -135,6 +137,7 @@ type (
 
 		// +kubebuilder:validation:Optional
 		// +kubebuilder:description: Service account name for the Kimup pods.
+		// +kubebuilder:default:=kimup
 		ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 		// +kubebuilder:validation:Optional
@@ -170,7 +173,7 @@ type (
 	KimupStatus struct {
 		Controller KimupInstanceStatus `json:"controller,omitempty"`
 
-		Webhook KimupInstanceStatus `json:"webhook,omitempty"`
+		AdmissionController KimupInstanceStatus `json:"admissionController,omitempty"`
 	}
 
 	KimupInstanceStatus struct {
@@ -178,7 +181,7 @@ type (
 		// It can be one of the following:
 		// - "ready": The kimup instance is ready to serve requests
 		// - "resources-created": The Kimup instance resources were created but not yet configured
-		Phase string `json:"phase,omitempty"`
+		State string `json:"state,omitempty"`
 
 		// IsRollingUpdate is true if the kimup instance is being updated
 		IsRollingUpdate bool `json:"isRollingUpdate,omitempty"`
@@ -189,8 +192,8 @@ type (
 // +kubebuilder:subresource:status
 
 // Kimup is the Schema for the kimups API
-// +kubebuilder:printcolumn:name="Controller",type=string,JSONPath=`.status.controller.phase`
-// +kubebuilder:printcolumn:name="Webhook",type=string,JSONPath=`.status.webhook.phase`
+// +kubebuilder:printcolumn:name="Controller",type=string,JSONPath=`.status.controller.state`
+// +kubebuilder:printcolumn:name="AdmissionController",type=string,JSONPath=`.status.admissionController.state`
 type Kimup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

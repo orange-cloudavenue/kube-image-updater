@@ -82,11 +82,11 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/operator cmd/operator/main.go
 	go build -o bin/kimup cmd/kimup/*
-	go build -o bin/webhook cmd/webhook/*
+	go build -o bin/admission-controller cmd/admission-controller/*
 
 .PHONY: build
-build-webhook: manifests generate fmt vet
-	go build -o bin/webhook cmd/webhook/*
+build-admission-controller: manifests generate fmt vet
+	go build -o bin/admission-controller cmd/admission-controller/*
 
 .PHONY: build-kimup
 build-kimup: manifests generate fmt vet
@@ -100,9 +100,9 @@ run-operator: manifests generate fmt vet ## Run a controller from your host.
 run-kimup: manifests generate fmt vet ## Run the image updater from your host.
 	go run ./cmd/kimup
 
-.PHONY: run-webhook
-run-webhook: manifests generate fmt vet ## Run the webhook from your host.
-	go run ./cmd/webhook/
+.PHONY: run-admission-controller
+run-admission-controller: manifests generate fmt vet ## Run the admission-controller from your host.
+	go run ./cmd/admission-controller/
 
 .PHONY: run-mkdocs
 run-mkdocs: ## Run mkdocs to serve the documentation locally.
