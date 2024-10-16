@@ -3,7 +3,8 @@ package actions
 import (
 	s "github.com/containrrr/shoutrrr"
 	"github.com/containrrr/shoutrrr/pkg/router"
-	log "github.com/sirupsen/logrus"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 )
 
 func newAlertSender(url string) (*router.ServiceRouter, error) {
@@ -12,7 +13,7 @@ func newAlertSender(url string) (*router.ServiceRouter, error) {
 		return nil, err
 	}
 
-	sender.SetLogger(log.StandardLogger())
+	sender.SetLogger(log.GetLogger())
 
 	return sender, nil
 }

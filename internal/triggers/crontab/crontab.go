@@ -5,8 +5,9 @@ import (
 
 	"github.com/reugn/go-quartz/job"
 	"github.com/reugn/go-quartz/quartz"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 )
 
@@ -19,10 +20,19 @@ func New(ctx context.Context) {
 type CronTrigger struct{}
 
 func AddCronTab(namespace, name, crontab string) error {
-	log.Infof("Registering crontab (%s) for %s in namespace %s", crontab, name, namespace)
+	log.WithFields(logrus.Fields{
+		"crontab":   crontab,
+		"namespace": namespace,
+		"name":      name,
+	}).Info("Registering crontab")
+
 	cronTrigger, _ := quartz.NewCronTrigger(crontab)
 	functionJob := job.NewFunctionJob(func(_ context.Context) (string, error) {
-		log.Infof("[Fire] Crontab trigger refresh for image %s in namespace %s", name, namespace)
+		log.WithFields(logrus.Fields{
+			"namespace": namespace,
+			"name":      name,
+		}).Info("Crontab trigger refresh")
+
 		_, err := triggers.Trigger(triggers.RefreshImage, namespace, name)
 		return "", err
 	})

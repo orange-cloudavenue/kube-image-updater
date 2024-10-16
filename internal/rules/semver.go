@@ -5,7 +5,8 @@ import (
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
-	log "github.com/sirupsen/logrus"
+
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 )
 
 var (
@@ -48,13 +49,13 @@ func (s *semverMajor) Evaluate() (matchWithRule bool, newTag string, err error) 
 	for _, t := range s.tags {
 		ac, err := semver.NewVersion(t)
 		if err != nil {
-			log.Errorf("Error parsing actual tag %s: %s", t, err)
+			log.WithError(err).WithField("tag", t).Error("Error parsing actual tag")
 			continue
 		}
 
 		v, err := semver.NewConstraint(fmt.Sprintf("^%s", x.IncMajor()))
 		if err != nil {
-			log.Errorf("Error parsing constraint %s: %s", x.IncMajor(), err)
+			log.WithError(err).WithField("constraint", x.IncMajor()).Error("Error parsing constraint")
 			continue
 		}
 
@@ -81,13 +82,13 @@ func (s *semverMinor) Evaluate() (matchWithRule bool, newTag string, err error) 
 	for _, t := range s.tags {
 		ac, err := semver.NewVersion(t)
 		if err != nil {
-			log.Errorf("Error parsing available tag %s: %s", t, err)
+			log.WithError(err).WithField("tag", t).Error("Error parsing actual tag")
 			continue
 		}
 
 		v, err := semver.NewConstraint(fmt.Sprintf("^%s", x.IncMinor()))
 		if err != nil {
-			log.Errorf("Error parsing constraint %s: %s", x.IncMinor(), err)
+			log.WithError(err).WithField("constraint", x.IncMinor()).Error("Error parsing constraint")
 			continue
 		}
 
@@ -114,13 +115,13 @@ func (s *semverPatch) Evaluate() (matchWithRule bool, newTag string, err error) 
 	for _, t := range s.tags {
 		ac, err := semver.NewVersion(t)
 		if err != nil {
-			log.Errorf("Error parsing actual tag %s: %s", t, err)
+			log.WithError(err).WithField("tag", t).Error("Error parsing actual tag")
 			continue
 		}
 
 		v, err := semver.NewConstraint(fmt.Sprintf(">=%s <%s", x.IncPatch(), x.IncMinor()))
 		if err != nil {
-			log.Errorf("Error parsing constraint %s: %s", x.IncPatch(), err)
+			log.WithError(err).WithField("constraint", x.IncPatch()).Error("Error parsing constraint")
 			continue
 		}
 

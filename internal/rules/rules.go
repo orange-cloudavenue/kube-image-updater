@@ -1,8 +1,6 @@
 package rules
 
-import (
-	log "github.com/sirupsen/logrus"
-)
+import "github.com/orange-cloudavenue/kube-image-updater/internal/log"
 
 type (
 	RuleInterface interface {
@@ -33,7 +31,6 @@ const (
 )
 
 func register(name Name, rule RuleInterface) {
-	log.Infof("Registering rule %s", name)
 	rules[name] = rule
 }
 

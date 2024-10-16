@@ -2,9 +2,9 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -12,11 +12,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 )
 
 // KimupReconciler reconciles a Image object
@@ -42,11 +42,16 @@ type KimupReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:gocyclo
-	log := log.FromContext(ctx)
+	xlog := log.WithContext(ctx).WithFields(logrus.Fields{
+		"namespace": req.Namespace,
+		"name":      req.Name,
+	})
 
 	var kim v1alpha1.Kimup
 	if err := r.Get(ctx, req.NamespacedName, &kim); err != nil {
-		log.Info(fmt.Sprintf("cloud not get the Kimup object: %s", req.NamespacedName))
+		if client.IgnoreNotFound(err) != nil {
+			xlog.WithError(err).Error("could not get the kimup object")
+		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -80,7 +85,7 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				resourcesToUpdate = append(resourcesToUpdate, resource)
 				continue
 			}
-			log.Error(err, "could not create the resource")
+			xlog.WithError(err).Error("could not create the resource")
 			rescheduleAfter = true
 			continue
 		}
@@ -88,7 +93,7 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	for _, resource := range resourcesToUpdate {
 		if err := r.Update(ctx, resource.obj); err != nil {
-			log.Error(err, "could not update the resource")
+			xlog.WithError(err).Error("could not update the resource")
 			rescheduleAfter = true
 			continue
 		}
@@ -109,7 +114,13 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		case "Deployment":
 			var deployment appsv1.Deployment
 			if err := r.Get(ctx, client.ObjectKeyFromObject(resource.obj), &deployment); err != nil {
-				log.Error(err, "could not get the deployment")
+				xlog.
+					WithError(err).
+					WithFields(logrus.Fields{
+						"namespace": deployment.Namespace,
+						"name":      deployment.Name,
+						"kind":      deployment.Kind,
+					}).Error("could not get the deployment")
 				rescheduleAfter = true
 				continue
 			}
@@ -122,7 +133,11 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			}
 
 			if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
-				log.Info(fmt.Sprintf("The %s deployment in namespace %s is not ready yet", deployment.Name, deployment.Namespace))
+				xlog.WithFields(logrus.Fields{
+					"namespace": deployment.Namespace,
+					"name":      deployment.Name,
+					"kind":      deployment.Kind,
+				}).Warn("The deployment is not ready yet")
 				rescheduleAfter = true
 				continue
 			} else {
@@ -132,13 +147,23 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				case KimupAdmissionControllerName:
 					kim.Status.AdmissionController.State = StateReady
 				}
-				log.Info(fmt.Sprintf("The %s deployment in namespace %s is ready", deployment.Name, deployment.Namespace))
+				xlog.WithFields(logrus.Fields{
+					"namespace": deployment.Namespace,
+					"name":      deployment.Name,
+					"kind":      deployment.Kind,
+				}).Info("The deployment is ready")
 			}
 
 		case "DaemonSet":
 			var daemonset appsv1.DaemonSet
 			if err := r.Get(ctx, client.ObjectKeyFromObject(resource.obj), &daemonset); err != nil {
-				log.Error(err, "could not get the daemonset")
+				xlog.
+					WithError(err).
+					WithFields(logrus.Fields{
+						"namespace": daemonset.Namespace,
+						"name":      daemonset.Name,
+						"kind":      daemonset.Kind,
+					}).Error("could not get the daemonset")
 				rescheduleAfter = true
 				continue
 			}
@@ -151,7 +176,11 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			}
 
 			if daemonset.Status.DesiredNumberScheduled != daemonset.Status.NumberReady {
-				log.Info("The daemonset is not ready yet")
+				xlog.WithFields(logrus.Fields{
+					"namespace": daemonset.Namespace,
+					"name":      daemonset.Name,
+					"kind":      daemonset.Kind,
+				}).Warn("The daemonset is not ready yet")
 				rescheduleAfter = true
 				continue
 			} else {
@@ -161,33 +190,49 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				case KimupAdmissionControllerName:
 					kim.Status.AdmissionController.State = StateReady
 				}
-				log.Info(fmt.Sprintf("The %s daemonset in namespace %s is ready", daemonset.Name, daemonset.Namespace))
+				xlog.WithFields(logrus.Fields{
+					"namespace": daemonset.Namespace,
+					"name":      daemonset.Name,
+					"kind":      daemonset.Kind,
+				}).Info("The daemonset is ready")
 			}
 
 		case "Service":
 			var service corev1.Service
 			if err := r.Get(ctx, client.ObjectKeyFromObject(resource.obj), &service); err != nil {
-				log.Error(err, "could not get the service")
+				xlog.
+					WithError(err).
+					WithFields(logrus.Fields{
+						"namespace": service.Namespace,
+						"name":      service.Name,
+						"kind":      service.Kind,
+					}).Error("could not get the service")
 				rescheduleAfter = true
 				continue
 			}
 
 			if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
 				if len(service.Status.LoadBalancer.Ingress) == 0 {
-					log.Info("The service is not ready yet")
+					xlog.WithFields(logrus.Fields{
+						"namespace": service.Namespace,
+						"name":      service.Name,
+						"kind":      service.Kind,
+					}).Warn("The service is not ready yet")
 					rescheduleAfter = true
 					continue
 				}
 			}
 
 		default:
-			log.Info(fmt.Sprintf("Unknown resource type: %s", resource.kind))
+			xlog.WithFields(logrus.Fields{
+				"kind": resource.kind,
+			}).Warn("Unknown resource type")
 		}
 	}
 
 	// Update status
 	if err := r.Status().Update(ctx, &kim); err != nil {
-		log.Error(err, "could not update the status of the kimup object")
+		xlog.WithError(err).Error("could not update the status of the kimup object")
 	}
 
 	if rescheduleAfter {
