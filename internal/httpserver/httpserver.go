@@ -76,10 +76,15 @@ var (
 )
 
 func init() {
-	flag.StringVar(&healthzPort, models.HealthzPortFlagName, models.HealthzDefaultAddr, fmt.Sprintf("Healthz server port. (ex: %s)", models.HealthzDefaultAddr))
-	flag.StringVar(&healthzPath, models.HealthzPathFlagName, models.HealthzDefaultPath, fmt.Sprintf("Healthz server path. (ex: %s)", models.HealthzDefaultPath))
-	flag.StringVar(&metricsPort, models.MetricsPortFlagName, models.MetricsDefaultAddr, fmt.Sprintf("Metrics server port. (ex: %s)", models.MetricsDefaultAddr))
-	flag.StringVar(&metricsPath, models.MetricsPathFlagName, models.HealthzDefaultPath, fmt.Sprintf("Metrics server path. (ex: %s)", models.MetricsDefaultPath))
+	// * Healthz
+	flag.Bool(models.HealthzFlagName, false, "Enable the healthz server.")
+	flag.StringVar(&healthzPort, models.HealthzPortFlagName, models.HealthzDefaultAddr, "Healthz server port.")
+	flag.StringVar(&healthzPath, models.HealthzPathFlagName, models.HealthzDefaultPath, "Healthz server path.")
+
+	// * Metrics
+	flag.Bool(models.MetricsFlagName, false, "Enable the metrics server.")
+	flag.StringVar(&metricsPort, models.MetricsPortFlagName, models.MetricsDefaultAddr, "Metrics server port.")
+	flag.StringVar(&metricsPath, models.MetricsPathFlagName, models.HealthzDefaultPath, "Metrics server path.")
 }
 
 // Function to initialize application, return app struct and a func waitgroup.
@@ -92,9 +97,14 @@ func Init(ctx context.Context, opts ...OptionServer) (InterfaceServer, CancelFun
 		wg:   &sync.WaitGroup{},
 	}
 
-	a.list["health"] = a.createHealth()
-	WithCustomHandlerForHealth(DefaultFuncHealthz)(a)
-	a.list["metrics"] = a.createMetrics()
+	if flag.Lookup(models.HealthzFlagName).Value.String() == "true" {
+		a.list["health"] = a.createHealth()
+		WithCustomHandlerForHealth(DefaultFuncHealthz)(a)
+	}
+
+	if flag.Lookup(models.MetricsFlagName).Value.String() == "true" {
+		a.list["metrics"] = a.createMetrics()
+	}
 
 	// create a new server for health
 	for _, opt := range opts {
@@ -263,6 +273,11 @@ func (a *app) checkIfPortIsAlreadyUsed(s *server) bool {
 // and the endpoint path (e.g. /healthz)
 func WithCustomHandlerForHealth(req HealthzFunc) OptionServer {
 	return func(a *app) {
+		// Prevent panic if the health server is not enabled
+		if _, ok := a.list["health"]; !ok {
+			return
+		}
+
 		a.list["health"].Config.Get(healthzPath, func(w http.ResponseWriter, r *http.Request) {
 			ok, err := req()
 			if err != nil {

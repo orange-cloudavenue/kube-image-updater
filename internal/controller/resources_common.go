@@ -20,8 +20,7 @@ func buildKimupArgs(extra v1alpha1.KimupExtraSpec) (args []string) {
 	args = []string{}
 	if extra.Healthz.Enabled {
 		// enable healthz
-		// TODO
-		// args = append(args, fmt.Sprintf("--%s", models.HealthzFlagName))
+		args = append(args, fmt.Sprintf("--%s", models.HealthzFlagName))
 
 		// set the healthz port
 		healthzPort := extra.Healthz.Port
@@ -40,7 +39,7 @@ func buildKimupArgs(extra v1alpha1.KimupExtraSpec) (args []string) {
 
 	if extra.Metrics.Enabled {
 		// enable metrics
-		// args = append(args, fmt.Sprintf("--%s", models.MetricsFlagName))
+		args = append(args, fmt.Sprintf("--%s", models.MetricsFlagName))
 
 		// set the metrics port
 		metricsPort := extra.Metrics.Port
@@ -60,7 +59,7 @@ func buildKimupArgs(extra v1alpha1.KimupExtraSpec) (args []string) {
 	}
 
 	// TODO
-	// args = append(args, fmt.Sprintf("--%s=%s", models.LogLevelFlagName, extra.LogLevel))
+	args = append(args, fmt.Sprintf("--%s=%s", models.LogLevelFlagName, extra.LogLevel))
 
 	return args
 }
