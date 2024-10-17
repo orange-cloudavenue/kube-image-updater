@@ -27,11 +27,14 @@ func init() {
 		logrus.SetLevel(loglevel)
 	}
 
+	// IsTerminal return true if the file descriptor is a terminal (TTY)
 	if term.IsTerminal(int(os.Stdout.Fd())) {
+		// Set the log format to text if the output is a terminal
 		logrus.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp: true,
 		})
 	} else {
+		// Set the log format to JSON if the output is not a terminal (Daemon, Container...)
 		logrus.SetFormatter(&logrus.JSONFormatter{})
 	}
 }

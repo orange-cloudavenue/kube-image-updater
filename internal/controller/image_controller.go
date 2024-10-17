@@ -75,11 +75,7 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	an := annotations.New(ctx, &image)
 
-	xlog.
-		WithFields(logrus.Fields{
-			"name":      req.Name,
-			"namespace": req.Namespace,
-		}).Info("Reconciling Image")
+	xlog.Info("Reconciling Image")
 	equal, err := an.CheckSum().IsEqual(image.Spec)
 	if err != nil || !equal {
 		an.Action().Set(annotations.ActionReload)
