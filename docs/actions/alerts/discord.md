@@ -29,21 +29,9 @@ kubectl apply -f discord-secret.yaml
 ```
 
 **2 - Create AlertConfig**
-
+<!-- Loaded from file because the vars in template are rendered by mkdocs-macros plugins and generate a error -->
 ```yaml hl_lines="6-13"
-apiVersion: kimup.cloudavenue.io/v1alpha1
-kind: AlertConfig
-metadata:
-  name: demo
-spec:
-  discord:
-    webhookURL: # (1)
-      valueFrom: # (2)
-        secretKeyRef:
-          name: discord-secret
-          key: webhookURL
-    templateBody: | # (3)
-      New dev version {{ .NewTag }} is available for {{ .ImageName }}.
+--8<-- "docs/actions/alerts/discord-alert-config.yaml"
 ```
 
 1. The `webhookURL` is the URL of the Discord webhook. [How to create a Discord webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
@@ -84,8 +72,4 @@ spec:
 
 ## Fields
 
-| Field | Description | Mandatory | Default |
-|-------|-------------|:-----------:|---------|
-| `webhookURL` | The URL of the Discord webhook. | :white_check_mark: | |
-| `templateBody` | The custom message. | | [Default message](getting-start.md#template-body-alert-message) |
-| `templateFile` | The path to the custom message file. | | |
+See the list of fields available for the `discord` alert on [doc.crds.dev](https://doc.crds.dev/github.com/orange-cloudavenue/kube-image-updater/kimup.cloudavenue.io/AlertConfig/v1alpha1@{{git.short_tag}}#discord)

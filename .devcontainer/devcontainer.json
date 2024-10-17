@@ -51,7 +51,7 @@
 		8000
 	],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip install mkdocs mkdocs-material pymdown-extensions mkdocs-video",
+	"postCreateCommand": "pip install mkdocs mkdocs-material pymdown-extensions mkdocs-video mkdocs-macros-plugin",
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode",
 	"updateRemoteUserUID": true,

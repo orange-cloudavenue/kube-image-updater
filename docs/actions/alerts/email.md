@@ -32,42 +32,9 @@ kubectl apply -f email-secret.yaml
 ```
 
 **2 - Create AlertConfig**
-
+<!-- Loaded from file because the vars in template are rendered by mkdocs-macros plugins and generate a error -->
 ```yaml hl_lines="6-34"
-apiVersion: kimup.cloudavenue.io/v1alpha1
-kind: AlertConfig
-metadata:
-  name: demo
-spec:
-    email:
-        host: # Required (1)
-          valueFrom:
-            secretKeyRef:
-            name: email-secret
-            key: smtpHost
-        port: # Optionnal (2)
-          valueFrom:
-            secretKeyRef:
-            name: email-secret
-            key: smtpPort
-        username: # Optionnal (3)
-          valueFrom:
-            secretKeyRef:
-            name: email-secret
-            key: smtpUsername
-        password: # Optionnal (4)
-          valueFrom:
-            secretKeyRef:
-            name: email-secret
-            key: smtpPassword
-        fromAddress: noreply@bar.com
-        toAddress: # Required (5)
-          - foo@bar.com
-          - bar@foo.com
-        templateBody: |
-          New dev version {{ .NewTag }} is available for {{ .ImageName }}.
-        templateSubject: |
-          New version available for {{ .ImageName }}
+--8<-- "docs/actions/alerts/email-alert-config.yaml"
 ```
 
 1. The `host` is the SMTP server host.
@@ -110,19 +77,4 @@ spec:
 
 ## Fields
 
-| Field            | Description                                                                                       | Mandatory | Default   |
-|------------------|---------------------------------------------------------------------------------------------------|:---------:|-----------|
-| `host`           | Host specifies the SMTP server to connect to.                                                     | :white_check_mark:       |           |
-| `port`           | Port specifies the port to connect to the SMTP server.                                            |       | 25        |
-| `username`       | Username specifies the username to use when connecting to the SMTP server.                        |       |           |
-| `password`       | Password specifies the password to use when connecting to the SMTP server.                        |       |           |
-| `auth`           | SMTP authentication method. Options: `Unknown`, `Plain`, `Login`, `CRAMMD5`, `None`, `OAuth2`.                |       | Unknown   |
-| `fromAddress`    | From specifies the email address to use as the sender.                                            | :white_check_mark:       |           |
-| `fromName`       | FromName specifies the name to use as the sender.                                                 |       |           |
-| `toAddress`      | List of recipient e-mails.                                                                        | :white_check_mark:       |           |
-| `clientHost`     | The client host name sent to the SMTP server during HELLO phase. If set to "auto", uses OS hostname. |       | auto      |
-| `encryption`     | Encryption method. Options: `Auto`, `None`, `ExplicitTLS`, `ImplicitTLS`.                                 |       | Auto      |
-| `useHTML`        | Whether the message being sent is in HTML format.                                                 |       | false     |
-| `useStartTLS`    | Whether to use the STARTTLS command (if the server supports it).                                  |       | true      |
-| `templateSubject`| The subject template for the email.                                                               |       |           |
-| `templateBody`   | The body template for the email.                                                                  |       |  [Default message](getting-start.md#template-body-alert-message)         |
+See the list of fields available for the `email` alert in the [doc.crds.dev](https://doc.crds.dev/github.com/orange-cloudavenue/kube-image-updater/kimup.cloudavenue.io/AlertConfig/v1alpha1@{{git.short_tag}}#spec-email)

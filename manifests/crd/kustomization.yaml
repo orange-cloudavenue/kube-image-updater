@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - kimup.cloudavenue.io_alertconfigs.yaml
+  - kimup.cloudavenue.io_images.yaml
+  - kimup.cloudavenue.io_kimups.yaml

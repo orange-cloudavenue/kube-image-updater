@@ -28,24 +28,17 @@ The template is a [Go template](https://pkg.go.dev/text/template) with the follo
 
 | Variable | Description | Type | Example |
 | :--- | :--- | :---: | :--- |
-| `{{ .Namespace }}` | The namespace of the resource | string |`default` |
-| `{{ .Name }}` | The name of the resource | string | `demo` |
-| `{{ .ImageName }}` | The image name | string | `ghcr.io/orange-cloudavenue/kube-image-updater` |
-| `{{ .BaseTag }}` | The base tag | string | `v0.0.19` |
-| `{{ .NewTag }}` | The new tag | string | `v0.0.22` |
-| `{{ .ActualTag }}` | The actual tag | string | `v0.0.21` |
-| `{{ .AvailableTags }}` | The available tags | slice | `v0.0.19, v0.0.20, v0.0.21, v0.0.22` |
+| `.Namespace` | The namespace of the resource | string |`default` |
+| `.Name` | The name of the resource | string | `demo` |
+| `.ImageName` | The image name | string | `{{dockerImages.controller}}` |
+| `.BaseTag` | The base tag | string | `v0.0.19` |
+| `.NewTag` | The new tag | string | `v0.0.22` |
+| `.ActualTag` | The actual tag | string | `v0.0.21` |
+| `.AvailableTags` | The available tags | slice | `v0.0.19, v0.0.20, v0.0.21, v0.0.22` |
 
 **Default template body alert message**
 
 ```
-	Kimup alert for image update:
-	{{ .Namespace }}/{{ .Name }}
+--8<-- "docs/actions/alerts/template-body-alert.txt"
 
-	Image **{{ .ImageName }}:{{ .ActualTag }}** has a new tag available: **{{ .NewTag }}**
-
-	Available tags:
-{{ range .AvailableTags -}}
-	- {{ . }}
-{{ end }}
 ```

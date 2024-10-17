@@ -1,0 +1,228 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.1
+  name: images.kimup.cloudavenue.io
+spec:
+  group: kimup.cloudavenue.io
+  names:
+    kind: Image
+    listKind: ImageList
+    plural: images
+    singular: image
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.image
+      name: Image
+      type: string
+    - jsonPath: .status.tag
+      name: Tag
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Image is the Schema for the images API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ImageSpec defines the desired state of Image
+            properties:
+              baseTag:
+                default: latest
+                example: v1.2.0
+                type: string
+              image:
+                type: string
+              imagePullSecrets:
+                items:
+                  description: |-
+                    LocalObjectReference contains enough information to let you locate the
+                    referenced object inside the same namespace.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+              insecureSkipTLSVerify:
+                default: false
+                example: true
+                type: boolean
+              rules:
+                items:
+                  description: ImageRule
+                  properties:
+                    actions:
+                      items:
+                        description: ImageAction
+                        properties:
+                          data:
+                            properties:
+                              value:
+                                description: |-
+                                  Value is a string value to assign to the key.
+                                  if ValueFrom is specified, this value is ignored.
+                                type: string
+                              valueFrom:
+                                description: ValueFrom is a reference to a field in
+                                  a secret or config map.
+                                properties:
+                                  alertConfigRef:
+                                    description: AlertConfigRef is a reference to
+                                      a field in an alert configuration.
+                                    properties:
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  configMapKeyRef:
+                                    description: ConfigMapKeyRef is a reference to
+                                      a field in a config map.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: SecretKeyRef is a reference to a
+                                      field in a secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                            type: object
+                          type:
+                            enum:
+                            - apply
+                            - request-approval
+                            - alert-discord
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      minItems: 1
+                      type: array
+                    name:
+                      type: string
+                    type:
+                      enum:
+                      - semver-major
+                      - semver-minor
+                      - semver-patch
+                      - regex
+                      - always
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - actions
+                  - name
+                  - type
+                  type: object
+                minItems: 1
+                type: array
+              triggers:
+                items:
+                  description: ImageTrigger
+                  properties:
+                    type:
+                      enum:
+                      - crontab
+                      - webhook
+                      type: string
+                    value:
+                      type: string
+                  required:
+                  - type
+                  type: object
+                minItems: 1
+                type: array
+            required:
+            - image
+            - rules
+            - triggers
+            type: object
+          status:
+            description: ImageStatus defines the observed state of Image
+            properties:
+              tag:
+                description: |-
+                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                type: string
+            required:
+            - tag
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
