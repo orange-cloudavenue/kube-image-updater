@@ -43,13 +43,11 @@ func generateTLS() (keyPair tls.Certificate, caPEM *bytes.Buffer, err error) {
 
 	caPEM, certPEM, certKeyPEM, err := generateCert([]string{webhookBase}, dnsNames, commonName)
 	if err != nil {
-		errorLogger.Printf("Failed to generate ca and certificate key pair: %v", err)
 		return
 	}
 
 	keyPair, err = tls.X509KeyPair(certPEM.Bytes(), certKeyPEM.Bytes())
 	if err != nil {
-		errorLogger.Printf("Failed to load certificate key pair: %v", err)
 		return
 	}
 	return
@@ -76,14 +74,12 @@ func generateCert(orgs, dnsNames []string, commonName string) (caPEM, newCertPEM
 	// generate private key for CA
 	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		errorLogger.Printf("Failed to generate private key for CA: %v", err)
 		return nil, nil, nil, err
 	}
 
 	// create the CA certificate
 	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivateKey.PublicKey, caPrivateKey)
 	if err != nil {
-		errorLogger.Printf("Failed to create CA certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
@@ -94,7 +90,6 @@ func generateCert(orgs, dnsNames []string, commonName string) (caPEM, newCertPEM
 		Bytes: caBytes,
 	})
 	if err != nil {
-		errorLogger.Printf("Failed to encode CA certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
@@ -103,8 +98,6 @@ func generateCert(orgs, dnsNames []string, commonName string) (caPEM, newCertPEM
 		writeNewCA(caPEM, manifestWebhookPath)
 		time.Sleep(2 * time.Second)
 		applyManifest(manifestWebhookPath)
-
-		// debugLogger.Printf("CA certificate Encoded: %s", base64.StdEncoding.EncodeToString(caPEM.Bytes()))
 	}
 
 	// new certificate config
@@ -124,14 +117,12 @@ func generateCert(orgs, dnsNames []string, commonName string) (caPEM, newCertPEM
 	// generate new private key
 	newPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		errorLogger.Printf("Failed to generate private key for new certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
 	// sign the new certificate
 	newCertBytes, err := x509.CreateCertificate(rand.Reader, newCert, ca, &newPrivateKey.PublicKey, caPrivateKey)
 	if err != nil {
-		errorLogger.Printf("Failed to create new certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
@@ -142,7 +133,6 @@ func generateCert(orgs, dnsNames []string, commonName string) (caPEM, newCertPEM
 		Bytes: newCertBytes,
 	})
 	if err != nil {
-		errorLogger.Printf("Failed to encode new certificate: %v", err)
 		return nil, nil, nil, err
 	}
 
@@ -153,7 +143,6 @@ func generateCert(orgs, dnsNames []string, commonName string) (caPEM, newCertPEM
 		Bytes: x509.MarshalPKCS1PrivateKey(newPrivateKey),
 	})
 	if err != nil {
-		errorLogger.Printf("Failed to encode new private key: %v", err)
 		return nil, nil, nil, err
 	}
 
@@ -166,7 +155,6 @@ func writeNewCA(caPEM *bytes.Buffer, filePath string) {
 	// Lire le fichier
 	file, err := os.Open(filePath)
 	if err != nil {
-		warningLogger.Printf("Failed to open file: %v\n", err)
 		return
 	}
 	defer file.Close()
@@ -182,14 +170,12 @@ func writeNewCA(caPEM *bytes.Buffer, filePath string) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		warningLogger.Printf("Failed to read file: %v\n", err)
 		return
 	}
 
 	// Écrire les modifications dans le fichier
 	file, err = os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
-		warningLogger.Printf("Failed to open file: %v\n", err)
 		return
 	}
 	defer file.Close()
@@ -198,7 +184,6 @@ func writeNewCA(caPEM *bytes.Buffer, filePath string) {
 	for _, line := range lines {
 		_, err := writer.WriteString(line + "\n")
 		if err != nil {
-			warningLogger.Printf("Failed to write to file: %v\n", err)
 			return
 		}
 	}
@@ -209,7 +194,6 @@ func applyManifest(file string) {
 	// read the manifest file
 	manifestBytes, err := os.ReadFile(file)
 	if err != nil {
-		warningLogger.Printf("Failed to read manifest: %v\n", err)
 		return
 	}
 
@@ -218,14 +202,12 @@ func applyManifest(file string) {
 	obj := &unstructured.Unstructured{}
 	_, _, err = decoder.Decode(manifestBytes, nil, obj)
 	if err != nil {
-		warningLogger.Printf("Failed to decode manifest: %v\n", err)
 		return
 	}
 
 	// convert the unstructured object to typed object
 	mutatingWebhookConfiguration, err := kubeclient.DecodeUnstructured[v1.MutatingWebhookConfigurationApplyConfiguration](obj)
 	if err != nil {
-		warningLogger.Printf("Failed to decode manifest: %v\n", err)
 		return
 	}
 
@@ -235,8 +217,6 @@ func applyManifest(file string) {
 		&mutatingWebhookConfiguration,
 		metav1.ApplyOptions{Force: true, FieldManager: "kumi-webhook"},
 	); err != nil {
-		warningLogger.Printf("Failed to apply manifest: %v\n", err)
 		return
 	}
-	infoLogger.Printf("Successfully applied manifest: %s", file)
 }

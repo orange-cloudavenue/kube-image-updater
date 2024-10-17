@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -133,7 +132,6 @@ func (c *Client) GetPullSecretsForImage(ctx context.Context, image v1alpha1.Imag
 				k = strings.TrimPrefix(k, i)
 			}
 
-			log.Debugf("Found auth for %s", k)
 			auths.Auths[k] = v
 		}
 	}

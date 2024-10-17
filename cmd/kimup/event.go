@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers/crontab"
@@ -21,7 +22,13 @@ func setupTriggers(x *v1alpha1.Image) {
 		case triggers.Crontab:
 			if ok, err := crontab.IsExistingJob(crontab.BuildKey(x.Namespace, x.Name)); err != nil || !ok {
 				if err := crontab.AddCronTab(x.Namespace, x.Name, trigger.Value); err != nil {
-					log.Errorf("Error adding cronjob: %v", err)
+					log.
+						WithError(err).
+						WithFields(logrus.Fields{
+							"crontab":   trigger.Value,
+							"namespace": x.Namespace,
+							"name":      x.Name,
+						}).Error("Error adding cronjob")
 				}
 			}
 		case triggers.Webhook:
@@ -36,7 +43,12 @@ func cleanTriggers(x *v1alpha1.Image) {
 		case triggers.Crontab:
 			if ok, err := crontab.IsExistingJob(crontab.BuildKey(x.Namespace, x.Name)); err != nil || ok {
 				if err := crontab.RemoveJob(crontab.BuildKey(x.Namespace, x.Name)); err != nil {
-					log.Errorf("Error removing crontab: %v", err)
+					log.
+						WithError(err).
+						WithFields(logrus.Fields{
+							"namespace": x.Namespace,
+							"name":      x.Name,
+						}).Error("Error removing crontab")
 				}
 			}
 		case triggers.Webhook:
@@ -48,10 +60,19 @@ func cleanTriggers(x *v1alpha1.Image) {
 func refreshIfRequired(an annotations.Annotation, image v1alpha1.Image) {
 	if an.Action().Get() == annotations.ActionRefresh {
 		// * Here is only if the image has annotations.ActionRefresh
-		log.Infof("[Fire] Annotation trigger refresh for image %s in namespace %s", image.Name, image.Namespace)
+		log.
+			WithFields(logrus.Fields{
+				"namespace": image.Namespace,
+				"name":      image.Name,
+			}).Info("Annotation trigger refresh")
 		_, err := triggers.Trigger(triggers.RefreshImage, image.Namespace, image.Name)
 		if err != nil {
-			log.Errorf("Error triggering event: %v", err)
+			log.
+				WithFields(logrus.Fields{
+					"namespace": image.Namespace,
+					"name":      image.Name,
+				}).
+				Error("Error triggering event")
 		}
 		an.Remove(annotations.KeyAction)
 	}

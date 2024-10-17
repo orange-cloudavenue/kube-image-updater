@@ -9,14 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
-	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
 var (
@@ -26,23 +24,20 @@ var (
 )
 
 func init() {
-	flag.String("loglevel", "info", "log level (debug, info, warn, error, fatal, panic)")
 	// TODO add namespace scope
+	// Flag "loglevel" is set in log package
 	flag.Parse()
-
-	log.SetLevel(utils.ParseLogLevel(flag.Lookup("loglevel").Value.String()))
-	log.SetFormatter(&log.TextFormatter{})
 }
 
 func main() {
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
-	log.Infof("Starting kimup (version: %s)", version)
+	log.WithField("version", version).Info("Starting kimup", version)
 
 	// kubernetes golang library provide flag "kubeconfig" to specify the path to the kubeconfig file
 	k, err := kubeclient.New(flag.Lookup("kubeconfig").Value.String())
 	if err != nil {
-		log.Panicf("Error creating kubeclient: %v", err)
+		log.WithError(err).Panic("Error creating kubeclient")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -60,7 +55,7 @@ func main() {
 		}))
 
 	if err := a.Run(); err != nil {
-		log.Errorf("Failed to start HTTP servers: %v", err)
+		log.WithError(err).Error("Failed to start HTTP servers")
 		// send signal to stop the program
 		c <- syscall.SIGINT
 	}
@@ -70,7 +65,7 @@ func main() {
 	go func() {
 		x, err := k.Image().Watch(ctx)
 		if err != nil {
-			log.Panicf("Error watching events: %v", err)
+			log.WithError(err).Panic("Error watching events")
 		}
 
 		for {
@@ -95,11 +90,11 @@ func main() {
 					setupTriggers(&event.Value)
 					refreshIfRequired(an, event.Value)
 					if err := setTagIfNotExists(ctx, k, an, &event.Value); err != nil {
-						log.Errorf("Error setting tag: %v", err)
+						log.WithError(err).Error("Error setting tag")
 					}
 
 					if err := k.Image().Update(ctx, event.Value); err != nil {
-						log.Errorf("Error updating image: %v", err)
+						log.WithError(err).Error("Error updating image")
 					}
 
 				case "MODIFIED":
@@ -112,7 +107,7 @@ func main() {
 							case triggers.Crontab:
 								cleanTriggers(&event.Value)
 							case triggers.Webhook:
-								log.Info("Webhook trigger not implemented yet")
+								log.Warn("Webhook trigger not implemented yet")
 							}
 						}
 
@@ -123,7 +118,7 @@ func main() {
 					refreshIfRequired(an, event.Value)
 
 					if err := k.Image().Update(ctx, event.Value); err != nil {
-						log.Errorf("Error updating image: %v", err)
+						log.WithError(err).Error("Error updating image")
 					}
 
 					setupTriggers(&event.Value)

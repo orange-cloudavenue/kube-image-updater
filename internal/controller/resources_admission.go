@@ -201,7 +201,7 @@ func GetKimupAdmissionResources(ctx context.Context, ki v1alpha1.Kimup) []Object
 		resources = append(resources, Object{kind: daemonset.TypeMeta.Kind, obj: &daemonset})
 	} // end switch
 
-	if ki.Spec.Controller.Healthz.Enabled || ki.Spec.Controller.Metrics.Enabled {
+	if ki.Spec.AdmissionController.Healthz.Enabled || ki.Spec.AdmissionController.Metrics.Enabled {
 		service := corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",

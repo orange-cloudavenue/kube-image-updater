@@ -18,17 +18,17 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	kimupv1alpha1 "github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 )
 
 // ImageReconciler reconciles a Image object
@@ -59,19 +59,23 @@ const (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	xlog := log.WithContext(ctx).WithFields(logrus.Fields{
+		"namespace": req.Namespace,
+		"name":      req.Name,
+	})
 
 	var image kimupv1alpha1.Image
 
 	if err := r.Client.Get(ctx, req.NamespacedName, &image); err != nil {
-		log.Log.Error(err, "unable to fetch Image")
+		if client.IgnoreNotFound(err) != nil {
+			xlog.WithError(err).Error("could not get the image object")
+		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	an := annotations.New(ctx, &image)
 
-	log.Log.Info(fmt.Sprintf("Reconciling Image %s in namespace %s", req.Name, req.Namespace))
-
+	xlog.Info("Reconciling Image")
 	equal, err := an.CheckSum().IsEqual(image.Spec)
 	if err != nil || !equal {
 		an.Action().Set(annotations.ActionReload)
@@ -80,11 +84,11 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	if an.CheckSum().IsNull() || !equal {
 		if err := an.CheckSum().Set(image.Spec); err != nil {
-			log.Log.Error(err, "unable to refresh checksum")
+			xlog.WithError(err).Error("unable to set checksum")
 			return ctrl.Result{}, err
 		}
 		if err := r.Client.Update(ctx, &image); err != nil {
-			log.Log.Error(err, "unable to update Image")
+			xlog.WithError(err).Error("unable to update Image")
 			return ctrl.Result{}, err
 		}
 	}
@@ -93,7 +97,7 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	image.SetStatusTag(an.Tag().Get())
 	if err := r.Status().Update(ctx, &image); err != nil {
-		log.Log.Error(err, "unable to update Image status")
+		xlog.WithError(err).Error("unable to update Image status")
 		return ctrl.Result{}, err
 	}
 

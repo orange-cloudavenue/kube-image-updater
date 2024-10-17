@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 )
 
 type (
@@ -152,7 +152,7 @@ func (i *ImageObj) Watch(ctx context.Context) (chan WatchInterface[v1alpha1.Imag
 
 				image, err := decodeUnstructured[v1alpha1.Image](event.Object.(*unstructured.Unstructured))
 				if err != nil {
-					log.Errorf("Error decoding image: %v", err)
+					log.WithError(err).Error("Failed to decode image")
 					continue
 				}
 

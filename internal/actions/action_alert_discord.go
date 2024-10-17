@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	s "github.com/containrrr/shoutrrr"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
@@ -60,8 +60,6 @@ func (a *alertDiscord) Execute(ctx context.Context) error {
 		return fmt.Errorf("error rendering alert message: %v", err)
 	}
 
-	log.Debugf("Sending Discord alert")
-
 	var bigErr error
 	if errS := sender.Send(message, nil); errS != nil {
 		for _, e := range errS {
@@ -72,6 +70,8 @@ func (a *alertDiscord) Execute(ctx context.Context) error {
 
 		return bigErr
 	}
+
+	log.WithField("action", a.GetName()).Info("Alert sent to Discord")
 
 	return nil
 }

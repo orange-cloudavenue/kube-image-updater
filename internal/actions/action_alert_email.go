@@ -8,6 +8,7 @@ import (
 	"github.com/containrrr/shoutrrr/pkg/types"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
@@ -72,6 +73,8 @@ func (a *alertEmail) Execute(ctx context.Context) error {
 
 		return bigErr
 	}
+
+	log.WithField("action", a.GetName()).Info("alert email sent")
 
 	return nil
 }

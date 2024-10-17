@@ -26,6 +26,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 
 	// Start Crontab client
 	crontab.New(ctx)
+	// Add event lock
 	event.On(triggers.RefreshImage.String(), event.ListenerFunc(func(e event.Event) (err error) {
 		if l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] == nil {
 			l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] = &sync.RWMutex{}

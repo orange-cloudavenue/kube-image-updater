@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -12,20 +11,18 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 )
 
 var (
 	insideCluster bool = true // running inside k8s cluster
-	debugLogger   *log.Logger
-	infoLogger    *log.Logger
-	warningLogger *log.Logger
-	errorLogger   *log.Logger
 
 	webhookNamespace   string = "example.com"
 	webhookServiceName string = "your"
@@ -49,12 +46,6 @@ var (
 )
 
 func init() {
-	// init loggers
-	debugLogger = log.New(os.Stderr, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLogger = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	warningLogger = log.New(os.Stderr, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
-	errorLogger = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-
 	// webhook server running namespace (default to "default")
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
@@ -82,14 +73,14 @@ func main() {
 	// kubernetes golang library provide flag "kubeconfig" to specify the path to the kubeconfig file
 	kubeClient, err = client.New(flag.Lookup("kubeconfig").Value.String())
 	if err != nil {
-		log.Panicf("Error creating kubeclient: %v", err)
+		log.WithError(err).Panicf("Error creating kubeclient")
 	}
 
 	// * Webhook server
 	// generate cert for webhook
 	pair, caPEM, err := generateTLS()
 	if err != nil {
-		errorLogger.Fatalf("Failed to generate TLS pair: %v", err)
+		log.WithError(err).Fatal("Failed to generate TLS")
 	}
 	tlsC := &tls.Config{
 		Certificates: []tls.Certificate{pair},
@@ -100,7 +91,7 @@ func main() {
 	// create or update the mutatingwebhookconfiguration
 	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace, kubeClient)
 	if err != nil {
-		errorLogger.Printf("Failed to create or update the mutating webhook configuration: %v", err)
+		log.WithError(err).Error("Failed to create or update the mutating webhook configuration")
 		signalChan <- os.Interrupt
 	}
 
@@ -116,11 +107,15 @@ func main() {
 
 	s, err := a.Add("webhook", httpserver.WithTLS(tlsC), httpserver.WithAddr(webhookPort))
 	if err != nil {
-		errorLogger.Fatalf("Failed to create the server: %v", err)
+		log.
+			WithError(err).
+			WithFields(logrus.Fields{
+				"address": webhookPort,
+			}).Fatal("Failed to create the server")
 	}
 	s.Config.Post(webhookPathMutate, ServeHandler)
 	if err := a.Run(); err != nil {
-		errorLogger.Fatalf("Failed to start HTTP servers: %v", err)
+		log.WithError(err).Fatal("Failed to start HTTP servers")
 	}
 
 	// !-- OS signal handling --! //
