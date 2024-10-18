@@ -7,8 +7,7 @@ permissions:
   contents: write
 jobs:
   testsunit:
-    needs: [pre-check]
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
       with:
@@ -19,6 +18,5 @@ jobs:
         go-version-file: 'go.mod'
     - run: go mod download
     - name: Run Go unit tests
-      env:
       run: |
         go test $(go list ./... | grep -v /internal/registry)

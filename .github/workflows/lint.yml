@@ -18,8 +18,7 @@ jobs:
   # Ensure project builds before running testing matrix
   lint:
     name: GolangCI-Lint
-    runs-on:
-      group: Default
+    runs-on: macos-14
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4 # v3.5.0
