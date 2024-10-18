@@ -1,0 +1,34 @@
+apiVersion: kimup.cloudavenue.io/v1alpha1
+kind: AlertConfig
+metadata:
+  name: demo
+spec:
+    email:
+        host: # Required (1)
+          valueFrom:
+            secretKeyRef:
+            name: email-secret
+            key: smtpHost
+        port: # Optionnal (2)
+          valueFrom:
+            secretKeyRef:
+            name: email-secret
+            key: smtpPort
+        username: # Optionnal (3)
+          valueFrom:
+            secretKeyRef:
+            name: email-secret
+            key: smtpUsername
+        password: # Optionnal (4)
+          valueFrom:
+            secretKeyRef:
+            name: email-secret
+            key: smtpPassword
+        fromAddress: noreply@bar.com
+        toAddress: # Required (5)
+          - foo@bar.com
+          - bar@foo.com
+        templateBody: |
+          New dev version {{ .NewTag }} is available for {{ .ImageName }}.
+        templateSubject: |
+          New version available for {{ .ImageName }}

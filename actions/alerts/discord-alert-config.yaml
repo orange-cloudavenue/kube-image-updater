@@ -1,0 +1,13 @@
+apiVersion: kimup.cloudavenue.io/v1alpha1
+kind: AlertConfig
+metadata:
+  name: demo
+spec:
+  discord:
+    webhookURL: # (1)
+      valueFrom: # (2)
+        secretKeyRef:
+          name: discord-secret
+          key: webhookURL
+    templateBody: | # (3)
+      New dev version {{ .NewTag }} is available for {{ .ImageName }}.

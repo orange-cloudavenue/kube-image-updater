@@ -1,0 +1,9 @@
+	Kimup alert for image update:
+	{{ .Namespace }}/{{ .Name }}
+
+	Image **{{ .ImageName }}:{{ .ActualTag }}** has a new tag available: **{{ .NewTag }}**
+
+	Available tags:
+{{ range .AvailableTags -}}
+	- {{ . }}
+{{ end }}
