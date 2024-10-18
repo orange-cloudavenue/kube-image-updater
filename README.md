@@ -18,15 +18,14 @@
 
 # Kubernetes Image Updater
 
-Kubernetes Image Updater is a tool that allows you to update the images of your Kubernetes deployments.
+> [!CAUTION]
+> This project is in early development and is not yet ready for production use. You are welcome to try it out and provide feedback, but be aware that theAPI may change at any time.
+
+Kubernetes Image Updater is a kubernetes operator with custom resource definition (CRD) that allows you to define the image update strategy and schedule.
 
 Useful links:
 
-* [Kube Image Updater documentation](https://github.com/orange-cloudavenue/kube-image-updater/docs/)
-
-## Requirements
-
-* [Go](https://golang.org/doc/install) 1.22.x (to build the provider plugin)
+* [Kube Image Updater documentation](https://orange-cloudavenue.github.io/kube-image-updater/)
 
 ## Using the Kube Image Updater
 
@@ -56,9 +55,5 @@ spec:
 
 ## Contributing
 
-This provider is open source and contributions are welcome.
-
-If you want to contribute to this provider, please read the [contributing guidelines](CONTRIBUTING.md).
-
+This project is open source and contributions are welcome.
 You may also report issues or feature requests on the [GitHub issue tracker](https://github.com/orange-cloudavenue/kube-image-updater/issues/new/choose).
-
