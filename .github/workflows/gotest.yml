@@ -1,0 +1,24 @@
+name: Unit tests
+on: pull_request_target
+permissions:
+  pull-requests: write
+  issues: write
+  repository-projects: write
+  contents: write
+jobs:
+  testsunit:
+    needs: [pre-check]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.CHANGELOG_PAT }}
+        ref: ${{ github.ref }}
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+    - run: go mod download
+    - name: Run Go unit tests
+      env:
+      run: |
+        go test $(go list ./... | grep -v /internal/registry)

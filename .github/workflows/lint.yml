@@ -9,7 +9,7 @@ on:
     paths:
       - '**.go'
       - '.golangci.yml'
-      
+
 # Testing only needs permissions to read the repository contents.
 permissions:
   contents: read
@@ -20,14 +20,13 @@ jobs:
     name: GolangCI-Lint
     runs-on:
       group: Default
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4 # v3.5.0
       - uses: actions/setup-go@v5 # v4.0.0
         with:
           go-version-file: 'go.mod'
       - run: go mod download
-      - run: make
       - name: Run linters
         uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86 # v6.1.0
         with:

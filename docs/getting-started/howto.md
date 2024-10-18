@@ -19,8 +19,8 @@ metadata:
   name: demo
   namespace: default
 spec:
-  image: ghcr.io/orange-cloudavenue/kube-image-updater
-  baseTag: v0.0.19
+  image: {{dockerImages.whoami}}
+  baseTag: v1.9.0
   triggers:
     - type: crontab
       value: "00 00 */12 * * *"
@@ -37,7 +37,7 @@ spec:
 kubectl apply -f image.yaml
 ```
 
-In this example the image `ghcr.io/orange-cloudavenue/kube-image-updater` will be updated every 12 hours with the latest minor version.
+In this example the image `{{dockerImages.whoami}}` will be updated every 12 hours with the latest minor version.
 
 3 - Check the Image TAG:
 
@@ -45,7 +45,7 @@ In this example the image `ghcr.io/orange-cloudavenue/kube-image-updater` will b
 kubectl get image demo'
 
 NAME   IMAGE                  TAG
-demo   ghcr.io/azrod/golink
+demo   {{dockerImages.whoami}}
 ```
 
 But you can force the update by running the following command:
@@ -58,7 +58,7 @@ The Image TAG is now updated:
 
 ```bash
 NAME   IMAGE                  TAG
-demo   ghcr.io/azrod/golink   v0.1.0
+demo   {{dockerImages.whoami}}   v1.10.0
 ```
 
 4 - Make a deployment with the image:
@@ -67,25 +67,23 @@ demo   ghcr.io/azrod/golink   v0.1.0
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: golink
+  name: whoami
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: golink
+      app: whoami
   template:
     metadata:
       annotations:
         kimup.cloudavenue.io/enabled: "true"
       labels:
-        app: golink
+        app: whoami
     spec:
       containers:
-        - name: golink
-          image: ghcr.io/azrod/golink
-          ports:
-            - containerPort: 8080
+        - name: whoami
+          image: {{dockerImages.whoami}}
 ```
 
 5 - Apply the deployment:
@@ -94,4 +92,4 @@ spec:
 kubectl apply -f deployment.yaml
 ```
 
-Now the deployment is running with the image `ghcr.io/azrod/golink:v0.1.0` define by your rules in the CRD `Image`.
+Now the deployment is running with the image `{{dockerImages.whoami}}:v1.10.0` define by your rules in the CRD `Image`.

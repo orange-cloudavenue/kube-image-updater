@@ -5,9 +5,10 @@ site_name: kube-image-updater
 nav:
   - Overview: "index.md"
   - Getting Started:
-    - Installation: install.md
-    - Howto: howto.md
+    - Installation: getting-started/install.md
+    - Howto: getting-started/howto.md
   - Custom Resources:
+    - Kimup: crd/kimup.md
     - Image: crd/image.md
     - AlertConfig: crd/alertconfig.md
   - Triggers:
@@ -65,6 +66,8 @@ repo_name: orange-cloudavenue/kube-image-updater
 plugins:
   - search
   - mkdocs-video
+  - macros:
+      on_undefined: silent
 
 
 markdown_extensions:
@@ -95,6 +98,7 @@ markdown_extensions:
   - pymdownx.mark
   - pymdownx.smartsymbols
   - pymdownx.superfences
+  - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
@@ -105,5 +109,10 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/orange-cloudavenue/kube-image-updater
+  dockerImages:
+    operator: ghcr.io/orange-cloudavenue/kimup-operator
+    controller: ghcr.io/orange-cloudavenue/kimup-controller
+    admissionController: ghcr.io/orange-cloudavenue/kimup-admission-controller
+    whoami: traefik/whoami
 
 copyright: Copyright &copy; 2023 - 2024 Orange Business - Cloud Avenue

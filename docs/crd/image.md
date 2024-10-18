@@ -26,6 +26,10 @@ spec:
     - <rule>
 ```
 
+## Configuration
+
+Kimup Operator uses a dedicated kimup CRD to create and manage image resources. The CRD allows various configurations to define the behaviour of the image. See [docs.crds.dev](https://doc.crds.dev/github.com/orange-cloudavenue/kube-image-updater/kimup.cloudavenue.io/Image/v1alpha1) for more information about the Image CRD.
+
 ## Advanced
 
 ### Use authenticated registry
