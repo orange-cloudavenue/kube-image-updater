@@ -78,9 +78,11 @@ jobs:
       with:
         go-version-file: 'go.mod'
     - run: go mod download
+    - name: Docker Setup Docker
+      uses: crazy-max/ghaction-setup-docker@v3.3.0
     - name: Run Go unit tests
       run: |
-        go test $(go list ./... | grep -v /internal/registry)
+        go test ./...
 
   # * Step 2: Create a new tag
   tag:

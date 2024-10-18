@@ -1,13 +1,16 @@
 name: Unit tests
-on: pull_request_target
+
+on:
+  pull_request_target:
+  workflow_dispatch:
+
 permissions:
-  pull-requests: write
-  issues: write
-  repository-projects: write
-  contents: write
+  pull-requests: read
+  contents: read
+
 jobs:
   testsunit:
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -17,6 +20,8 @@ jobs:
       with:
         go-version-file: 'go.mod'
     - run: go mod download
+    - name: Docker Setup Docker
+      uses: crazy-max/ghaction-setup-docker@v3.3.0
     - name: Run Go unit tests
       run: |
         go test ./...
