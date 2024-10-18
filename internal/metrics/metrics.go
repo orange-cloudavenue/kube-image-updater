@@ -14,7 +14,7 @@ type (
 
 	MetricCounter struct {
 		metricBase
-		Counter *prometheus.Counter
+		Counter prometheus.Counter
 	}
 
 	MetricGauge struct {
@@ -24,7 +24,7 @@ type (
 
 	MetricHistogram struct {
 		metricBase
-		Histogram *prometheus.Histogram
+		Histogram prometheus.Histogram
 	}
 
 	MetricSummary struct {
@@ -59,11 +59,6 @@ func NewCounter(name, help string) prometheus.Counter {
 		Metrics[MetricTypeCounter] = make(map[string]interface{})
 	}
 
-	x := promauto.NewCounter(prometheus.CounterOpts{
-		Name: name,
-		Help: help,
-	})
-
 	// Add the counter to the map
 	Metrics[MetricTypeCounter][name] = MetricCounter{
 		// Create the metricBase
@@ -72,10 +67,13 @@ func NewCounter(name, help string) prometheus.Counter {
 			Help: help,
 		},
 		// Create the counter prometheus
-		Counter: &x,
+		Counter: promauto.NewCounter(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		}),
 	}
 
-	return *Metrics[MetricTypeCounter][name].(MetricCounter).Counter
+	return Metrics[MetricTypeCounter][name].(MetricCounter).Counter
 }
 
 // NewGauge creates a new Prometheus gauge
@@ -117,13 +115,6 @@ func NewHistogram(name, help string) prometheus.Histogram {
 		Metrics[MetricTypeHistogram] = make(map[string]interface{})
 	}
 
-	x := promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: name,
-		Help: help,
-		// Bucket configuration for microsecond durations
-		Buckets: []float64{0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.5, 1, 2, 5, 10},
-	})
-
 	// Add the histogram to the map
 	Metrics[MetricTypeHistogram][name] = MetricHistogram{
 		// Create the metricBase
@@ -132,10 +123,15 @@ func NewHistogram(name, help string) prometheus.Histogram {
 			Help: help,
 		},
 		// Create the histogram prometheus
-		Histogram: &x,
+		Histogram: promauto.NewHistogram(prometheus.HistogramOpts{
+			Name: name,
+			Help: help,
+			// Bucket configuration for microsecond durations
+			Buckets: []float64{0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.5, 1, 2, 5, 10},
+		}),
 	}
 
-	return *Metrics[MetricTypeHistogram][name].(MetricHistogram).Histogram
+	return Metrics[MetricTypeHistogram][name].(MetricHistogram).Histogram
 }
 
 // NewSummary creates a new Prometheus summary

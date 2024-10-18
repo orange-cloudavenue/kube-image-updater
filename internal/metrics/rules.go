@@ -46,6 +46,6 @@ func (a *rules) TotalErr() prometheus.Counter {
 //
 // timerRules := prometheus.NewTimer(metrics.Rules().Duration())
 
-func (a *rules) Duration() prometheus.Histogram {
-	return rulesDuration
+func (a *rules) Duration() *prometheus.Timer {
+	return prometheus.NewTimer(rulesDuration)
 }

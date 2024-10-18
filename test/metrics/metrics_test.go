@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -31,7 +30,6 @@ func TestMetric_Counter(t *testing.T) {
 	for _, m := range list[metrics.MetricTypeCounter] {
 		// Check if the metric is a metricCounter
 		if m, ok := m.(metrics.MetricCounter); ok {
-			// TODO - Constructs all the expected tests
 			// fill struct test with data
 			testUnit = testsCounter{
 				{
@@ -42,7 +40,7 @@ func TestMetric_Counter(t *testing.T) {
 # TYPE %s %s
 `, m.Name, m.Help, m.Name, metrics.MetricTypeCounter),
 					value: " 1\n",
-					c:     *m.Counter,
+					c:     m.Counter,
 					error: false,
 				},
 				{
@@ -53,7 +51,7 @@ func TestMetric_Counter(t *testing.T) {
 # TYPE %s_mistake_error_in_TYPE %s
 `, m.Name, m.Help, m.Name, metrics.MetricTypeCounter),
 					value: " 1\n",
-					c:     *m.Counter,
+					c:     m.Counter,
 					error: true, // Error because the counter name is not the same in the HELP description
 				},
 				{
@@ -64,7 +62,7 @@ func TestMetric_Counter(t *testing.T) {
 # TYPE %s %s
 `, m.Name, m.Help, m.Name, metrics.MetricTypeCounter),
 					value: " 1\n",
-					c:     *m.Counter,
+					c:     m.Counter,
 					error: true, // Error because the counter name is not the same in the description
 				},
 			} // end of testsCounter struct
@@ -132,7 +130,7 @@ func TestMetric_Histogram(t *testing.T) {
 %s_count 1
 `, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name),
 					observation: 0.1,
-					h:           *m.Histogram,
+					h:           m.Histogram,
 					error:       false,
 				},
 				{
@@ -158,7 +156,7 @@ func TestMetric_Histogram(t *testing.T) {
 %s_count 1
 `, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name),
 					observation: 0.1,
-					h:           *m.Histogram,
+					h:           m.Histogram,
 					error:       true, // Error because the bucket is missing
 				},
 				{
@@ -185,7 +183,7 @@ func TestMetric_Histogram(t *testing.T) {
 %s_count 1
 `, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name, m.Name),
 					observation: 2.5,
-					h:           *m.Histogram,
+					h:           m.Histogram,
 					error:       true, // Error because the observation is wrong
 				},
 			} // end of testsHistogram struct
@@ -195,11 +193,7 @@ func TestMetric_Histogram(t *testing.T) {
 		for _, tt := range testUnit {
 			t.Run(tt.name, func(t *testing.T) {
 				// Get the Duration histogram
-				timer := metrics.Actions().Duration()
-
-				// Simulate an action duration
-				time.Sleep(100 * time.Millisecond)
-				timer.ObserveDuration()
+				tt.h.Observe(tt.observation)
 
 				// Verify the histogram value
 				if err := testutil.CollectAndCompare(tt.h, strings.NewReader(tt.data+tt.value)); err != nil {
@@ -208,13 +202,6 @@ func TestMetric_Histogram(t *testing.T) {
 						if !tt.error {
 							t.Errorf("unexpected error: %v", err)
 						}
-					}
-				}
-
-				// Check the observation
-				if got := timer.ObserveDuration().Seconds(); got <= tt.observation {
-					if !tt.error {
-						t.Errorf("expected %v, got %v", tt.observation, got)
 					}
 				}
 			})

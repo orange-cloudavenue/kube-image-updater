@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gookit/event"
-	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/retry"
 
@@ -91,26 +90,26 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 					return ""
 				}(),
 			})
+			timerRegistry.ObserveDuration()
 			if err != nil {
 				// Prometheus metrics - Increment the counter for the registry with error
 				metrics.Registry().TotalErr().Inc()
 
 				return err
 			}
-			timerRegistry.ObserveDuration()
 
 			// Prometheus metrics - Increment the counter for the tags
 			metrics.Tags().Total().Inc()
 			timerTags := metrics.Tags().Duration()
 
 			tagsAvailable, err := re.Tags()
+			timerTags.ObserveDuration()
 			if err != nil {
 				// Prometheus metrics - Increment the counter for the tags with error
 				metrics.Tags().TotalErr().Inc()
 
 				return err
 			}
-			timerTags.ObserveDuration()
 
 			log.Debugf("[RefreshImage] %d tags available for %s", len(tagsAvailable), image.Spec.Image)
 
@@ -130,9 +129,13 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 
 				// Prometheus metrics - Increment the counter for the rules
 				metrics.Rules().Total().Inc()
-				timerRules := prometheus.NewTimer(metrics.Rules().Duration())
+				timerRules := metrics.Rules().Duration()
 
 				match, newTag, err := r.Evaluate()
+
+				// Prometheus metrics - Observe the duration of the rule evaluation
+				timerRules.ObserveDuration()
+
 				if err != nil {
 					// Prometheus metrics - Increment the counter for the evaluated rule with error
 					metrics.Rules().TotalErr().Inc()
@@ -140,9 +143,6 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 					log.Errorf("Error evaluating rule: %v", err)
 					continue
 				}
-
-				// Prometheus metrics - Observe the duration of the rule evaluation
-				timerRules.ObserveDuration()
 
 				if match {
 					for _, action := range rule.Actions {
@@ -162,26 +162,24 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 						metrics.Actions().Total().Inc()
 						timerActions := metrics.Actions().Duration()
 
-						if err := a.Execute(ctx); err != nil {
+						err = a.Execute(ctx)
+
+						// Prometheus metrics - Observe the duration of the action execution
+						timerActions.ObserveDuration()
+
+						if err != nil {
 							// Prometheus metrics - Increment the counter for the executed action with error
 							metrics.Actions().TotalErr().Inc()
 
 							log.Errorf("Error executing action(%s): %v", action.Type, err)
 							continue
 						}
-
-						// Prometheus metrics - Observe the duration of the action execution
-						timerActions.ObserveDuration()
 					}
 					log.Debugf("[RefreshImage] Rule %s evaluated: %v -> %s", rule.Type, tag, newTag)
 				}
 			}
 
-			if err := k.Image().Update(ctx, image); err != nil {
-				return err
-			}
-
-			return nil
+			return k.Image().Update(ctx, image)
 		})
 
 		// Prometheus metrics - Increment the counter for the events evaluated with error

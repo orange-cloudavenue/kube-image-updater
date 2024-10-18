@@ -50,32 +50,3 @@ func (a *actions) TotalErr() prometheus.Counter {
 func (a *actions) Duration() *prometheus.Timer {
 	return prometheus.NewTimer(actionsDuration)
 }
-
-// // GetCounter return the list of counter for the actions.
-// // This is useful to retrieve all the counter like an prometheus Counter for the actions.
-// func (a *actions) GetCounter() []prometheus.Counter {
-// 	return []prometheus.Counter{
-// 		actionsTotal,
-// 		actionsErrTotal,
-// 	}
-// }
-
-// // GetGauge return the list of gauge for the actions.
-// // This is useful to retrieve all the gauge like an prometheus Gauge for the actions.
-// func (a *actions) GetGauge() []prometheus.Gauge {
-// 	return []prometheus.Gauge{}
-// }
-
-// // GetHistogram return the list of histogram for the actions.
-// // This is useful to retrieve all the histogram like an prometheus Histogram for the actions.
-// func (a *actions) GetHistogram() []prometheus.Histogram {
-// 	return []prometheus.Histogram{
-// 		actionsDuration,
-// 	}
-// }
-
-// // GetSummary return the list of summary for the actions.
-// // This is useful to retrieve all the summary like an prometheus Summary for the actions.
-// func (a *actions) GetSummary() []prometheus.Summary {
-// 	return []prometheus.Summary{}
-// }
