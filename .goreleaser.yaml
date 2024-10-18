@@ -53,7 +53,7 @@ dockers:
   # * KIMUP
   - goarch: amd64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-controller:{{ .Version }}-amd64"
+    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-controller:v{{ .Version }}-amd64"
     dockerfile: Dockerfile
     use: buildx
     ids:
@@ -72,7 +72,7 @@ dockers:
 
   - goarch: arm64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:{{ .Version }}-arm64v8"
+    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:v{{ .Version }}-arm64v8"
     dockerfile: Dockerfile
     use: buildx
     ids:
@@ -92,7 +92,7 @@ dockers:
   # * KIMUP-OPERATOR
   - goarch: amd64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-operator:{{ .Version }}-amd64"
+    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-operator:v{{ .Version }}-amd64"
     dockerfile: Dockerfile
     use: buildx
     ids:
@@ -111,7 +111,7 @@ dockers:
 
   - goarch: arm64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:{{ .Version }}-arm64v8"
+    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-arm64v8"
     dockerfile: Dockerfile
     use: buildx
     ids:
@@ -131,7 +131,7 @@ dockers:
   # * KIMUP-ADMISSION-CONTROLLER
   - goarch: amd64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-admission-controller:{{ .Version }}-amd64"
+    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-admission-controller:v{{ .Version }}-amd64"
     dockerfile: Dockerfile
     use: buildx
     ids:
@@ -150,7 +150,7 @@ dockers:
 
   - goarch: arm64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:{{ .Version }}-arm64v8"
+    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:v{{ .Version }}-arm64v8"
     dockerfile: Dockerfile
     use: buildx
     ids:
