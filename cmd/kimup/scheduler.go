@@ -11,6 +11,7 @@ import (
 
 	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/registry"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/rules"
@@ -28,6 +29,12 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 	crontab.New(ctx)
 	// Add event lock
 	event.On(triggers.RefreshImage.String(), event.ListenerFunc(func(e event.Event) (err error) {
+		// Increment the counter for the events
+		metrics.Events().Total().Inc()
+		// Start the timer for the event execution
+		timerEvents := metrics.Events().Duration()
+		defer timerEvents.ObserveDuration()
+
 		if l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] == nil {
 			l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] = &sync.RWMutex{}
 		}
@@ -64,6 +71,10 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 
 			i := utils.ImageParser(image.Spec.Image)
 
+			// Prometheus metrics - Increment the counter for the registry
+			metrics.Registry().Total().Inc()
+			timerRegistry := metrics.Registry().Duration()
+
 			re, err := registry.New(ctx, image.Spec.Image, registry.Settings{
 				InsecureTLS: image.Spec.InsecureSkipTLSVerify,
 				Username: func() string {
@@ -79,12 +90,24 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 					return ""
 				}(),
 			})
+			timerRegistry.ObserveDuration()
 			if err != nil {
+				// Prometheus metrics - Increment the counter for the registry with error
+				metrics.Registry().TotalErr().Inc()
+
 				return err
 			}
 
+			// Prometheus metrics - Increment the counter for the tags
+			metrics.Tags().Total().Inc()
+			timerTags := metrics.Tags().Duration()
+
 			tagsAvailable, err := re.Tags()
+			timerTags.ObserveDuration()
 			if err != nil {
+				// Prometheus metrics - Increment the counter for the tags with error
+				metrics.Tags().TotalErr().Inc()
+
 				return err
 			}
 
@@ -103,8 +126,20 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				}
 
 				r.Init(tag, tagsAvailable, rule.Value)
+
+				// Prometheus metrics - Increment the counter for the rules
+				metrics.Rules().Total().Inc()
+				timerRules := metrics.Rules().Duration()
+
 				match, newTag, err := r.Evaluate()
+
+				// Prometheus metrics - Observe the duration of the rule evaluation
+				timerRules.ObserveDuration()
+
 				if err != nil {
+					// Prometheus metrics - Increment the counter for the evaluated rule with error
+					metrics.Rules().TotalErr().Inc()
+
 					log.Errorf("Error evaluating rule: %v", err)
 					continue
 				}
@@ -122,23 +157,33 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 							New:           newTag,
 							AvailableTags: tagsAvailable,
 						}, &image, action.Data)
-						if err := a.Execute(ctx); err != nil {
+
+						// Prometheus metrics - Increment the counter for the actions
+						metrics.Actions().Total().Inc()
+						timerActions := metrics.Actions().Duration()
+
+						err = a.Execute(ctx)
+
+						// Prometheus metrics - Observe the duration of the action execution
+						timerActions.ObserveDuration()
+
+						if err != nil {
+							// Prometheus metrics - Increment the counter for the executed action with error
+							metrics.Actions().TotalErr().Inc()
+
 							log.Errorf("Error executing action(%s): %v", action.Type, err)
 							continue
 						}
 					}
-
 					log.Debugf("[RefreshImage] Rule %s evaluated: %v -> %s", rule.Type, tag, newTag)
 				}
 			}
 
-			if err := k.Image().Update(ctx, image); err != nil {
-				return err
-			}
-
-			return nil
+			return k.Image().Update(ctx, image)
 		})
 
+		// Prometheus metrics - Increment the counter for the events evaluated with error
+		metrics.Events().TotalErr().Inc()
 		return retryErr
 	}), event.Normal)
 }

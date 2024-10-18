@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,16 +15,16 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/patch"
 )
 
 // func serveHandler
 func ServeHandler(w http.ResponseWriter, r *http.Request) {
-	// start the timer
-	timer := prometheus.NewTimer(promHTTPDuration)
-	defer timer.ObserveDuration()
-	// increment the totalRequests counter
-	promHTTPRequestsTotal.Inc()
+	// Prometheus metrics
+	metrics.AdmissionController().Total().Inc()
+	timeAC := metrics.AdmissionController().Duration()
+	defer timeAC.ObserveDuration()
 
 	var body []byte
 	if r.Body != nil {
@@ -34,7 +33,9 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(body) == 0 {
-		promHTTPErrorsTotal.Inc()
+		// increment the total number of errors
+		metrics.AdmissionController().TotalErr().Inc()
+
 		log.Error("empty body")
 		http.Error(w, "empty body", http.StatusBadRequest)
 		return
@@ -43,7 +44,9 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	// verify the content type is accurate
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
-		promHTTPErrorsTotal.Inc()
+		// increment the total number of errors
+		metrics.AdmissionController().TotalErr().Inc()
+
 		http.Error(w, "invalid Content-Type, expect `application/json`", http.StatusUnsupportedMediaType)
 		return
 	}
@@ -51,7 +54,9 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	var admissionResponse *admissionv1.AdmissionResponse
 	ar := admissionv1.AdmissionReview{}
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
-		promHTTPErrorsTotal.Inc()
+		// increment the total number of errors
+		metrics.AdmissionController().TotalErr().Inc()
+
 		log.WithError(err).Warn("Can't decode body")
 		admissionResponse = &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
@@ -77,11 +82,15 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(admissionReview)
 	if err != nil {
-		promHTTPErrorsTotal.Inc()
+		// increment the total number of errors
+		metrics.AdmissionController().TotalErr().Inc()
+
 		http.Error(w, fmt.Sprintf("could not encode response: %v", err), http.StatusInternalServerError)
 	}
 	if _, err := w.Write(resp); err != nil {
-		promHTTPErrorsTotal.Inc()
+		// increment the total number of errors
+		metrics.AdmissionController().TotalErr().Inc()
+
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}
 }
@@ -128,10 +137,18 @@ func mutate(ctx context.Context, ar *admissionv1.AdmissionReview) *admissionv1.A
 
 // create mutation patch for pod.
 func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
+	// Metrics - increment the total number of patch
+	metrics.AdmissionControllerPatch().Total().Inc()
+	timePatch := metrics.AdmissionControllerPatch().Duration()
+	defer timePatch.ObserveDuration()
+
 	var err error
 	// find annotation enabled
 	an := annotations.New(ctx, pod)
 	if !an.Enabled().Get() {
+		// increment the total number of errors
+		metrics.AdmissionControllerPatch().TotalErr().Inc()
+
 		return nil, fmt.Errorf("annotation not enabled")
 	}
 
@@ -154,6 +171,9 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 			// find the image associated with the pod
 			image, err = kubeClient.Image().Find(ctx, pod.Namespace, container.Image)
 			if err != nil {
+				// increment the total number of errors
+				metrics.AdmissionControllerPatch().TotalErr().Inc()
+
 				log.
 					WithFields(logrus.Fields{
 						"Namespace": pod.Namespace,
@@ -166,6 +186,9 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 		} else {
 			image, err = kubeClient.Image().Get(ctx, pod.Namespace, crdName)
 			if err != nil {
+				// increment the total number of errors
+				metrics.AdmissionControllerPatch().TotalErr().Inc()
+
 				log.
 					WithFields(logrus.Fields{
 						"Namespace": pod.Namespace,
@@ -179,8 +202,6 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 		// Set the image to the pod
 		if image.ImageIsEqual(container.Image) {
 			p.AddPatch(patch.OpReplace, fmt.Sprintf("/spec/containers/%d/image", i), image.GetImageWithTag())
-			// increment the total number of patches
-			promPatchTotal.Inc()
 		}
 
 		// Annotations
