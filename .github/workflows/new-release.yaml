@@ -84,7 +84,7 @@ jobs:
 
   # * Step 2: Create a new tag
   tag:
-    needs: [golangci-lint, pre-check, tag-already-exist]
+    needs: [golangci-lint, pre-check, tag-already-exist, testsunit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -115,27 +115,44 @@ jobs:
           name: release-notes
           path: release-notes.txt
           retention-days: 1
-  publish-release:
-    needs: [release-notes, tag, pre-check]
+  release-app:
     runs-on: ubuntu-latest
+    needs: [release-notes, golangci-lint, pre-check]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ needs.pre-check.outputs.TAG_NAME }}
+          ref:  ${{ needs.pre-check.outputs.TAG_NAME }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - id: release-notes-download
         name: Release Notes Download
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: release-notes
           path: /tmp
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        if: success()
         with:
-          body_path: ${{ steps.release-notes-download.outputs.download-path }}/release-notes.txt
-          tag_name: ${{ needs.pre-check.outputs.TAG_NAME }}
+          distribution: goreleaser
+          version: latest
+          args: release --clean -f .goreleaser.yaml --release-notes=${{ steps.release-notes-download.outputs.download-path }}/release-notes.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   trigger-doc-update:
-    needs: [publish-release, pre-check]
+    needs: [release-app, pre-check]
     runs-on: ubuntu-latest
     steps:
       - name: Repository Dispatch
@@ -143,7 +160,7 @@ jobs:
         with:
           event-type: update-doc
   changelog-newversion:
-    needs: [publish-release, golangci-lint, pre-check]
+    needs: [release-app, pre-check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
