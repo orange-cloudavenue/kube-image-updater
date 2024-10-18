@@ -79,7 +79,6 @@ jobs:
         go-version-file: 'go.mod'
     - run: go mod download
     - name: Run Go unit tests
-      env:
       run: |
         go test $(go list ./... | grep -v /internal/registry)
 
