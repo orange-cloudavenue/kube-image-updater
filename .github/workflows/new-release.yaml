@@ -147,7 +147,7 @@ jobs:
         if: success()
         with:
           distribution: goreleaser
-          version: latest
+          version: ~> v2
           args: release --clean -f .goreleaser.yaml --release-notes=${{ steps.release-notes-download.outputs.download-path }}/release-notes.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -15,8 +15,8 @@ checksum:
   name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
 
 builds:
-  - id: "kimup"
-    binary: kimup
+  - id: "kimup-controller"
+    binary: kimup-controller
     main: ./cmd/kimup
     goos:
       - linux
@@ -53,38 +53,38 @@ dockers:
   # * KIMUP
   - goarch: amd64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}:{{ .Version }}-amd64"
+    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-controller:{{ .Version }}-amd64"
     dockerfile: Dockerfile
     use: buildx
     ids:
-      - kimup
+      - kimup-controller
     build_flag_templates:
     - --platform=linux/amd64
-    - "--build-arg=BINNAME=kimup"
+    - "--build-arg=BINNAME=kimup-controller"
     - --pull
-    - --label=org.opencontainers.image.title="kimup"
-    - --label=org.opencontainers.image.description="kube-image-updater"
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{.ProjectName}}
+    - --label=org.opencontainers.image.title="kimup-controller"
+    - --label=org.opencontainers.image.description="kube-image-updater-controller"
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater
     - --label=org.opencontainers.image.version={{ .Version }}
     - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
     - --label=org.opencontainers.image.revision={{ .FullCommit }}
 
   - goarch: arm64
     image_templates:
-    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:{{ .Version }}-arm64v8"
+    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:{{ .Version }}-arm64v8"
     dockerfile: Dockerfile
     use: buildx
     ids:
-      - kimup
+      - kimup-controller
     build_flag_templates:
     - --platform=linux/arm64/v8
-    - "--build-arg=BINNAME=kimup"
+    - "--build-arg=BINNAME=kimup-controller"
     - --pull
-    - --label=org.opencontainers.image.title="kimup"
-    - --label=org.opencontainers.image.description={{ .ProjectName }}
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}
+    - --label=org.opencontainers.image.title="kimup-controller"
+    - --label=org.opencontainers.image.description="kube-image-updater-controller"
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater
     - --label=org.opencontainers.image.version={{ .Version }}
     - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
     - --label=org.opencontainers.image.revision={{ .FullCommit }}
@@ -103,8 +103,8 @@ dockers:
     - --pull
     - --label=org.opencontainers.image.title="kimup-operator"
     - --label=org.opencontainers.image.description="kube-image-updater-operator"
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater-operator
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater-operator
     - --label=org.opencontainers.image.version={{ .Version }}
     - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
     - --label=org.opencontainers.image.revision={{ .FullCommit }}
@@ -122,8 +122,8 @@ dockers:
     - --pull
     - --label=org.opencontainers.image.title="kimup-operator"
     - --label=org.opencontainers.image.description="kube-image-updater-operator"
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-operator
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater-operator
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater-operator
     - --label=org.opencontainers.image.version={{ .Version }}
     - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
     - --label=org.opencontainers.image.revision={{ .FullCommit }}
@@ -142,8 +142,8 @@ dockers:
     - --pull
     - --label=org.opencontainers.image.title="kimup-admission-controller"
     - --label=org.opencontainers.image.description="kube-image-updater-admission-controller"
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-admission-controller
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-admission-controller
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
     - --label=org.opencontainers.image.version={{ .Version }}
     - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
     - --label=org.opencontainers.image.revision={{ .FullCommit }}
@@ -161,22 +161,22 @@ dockers:
     - --pull
     - --label=org.opencontainers.image.title="kimup-admission-controller"
     - --label=org.opencontainers.image.description="kube-image-updater-admission-controller"
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/{{ .ProjectName }}-admission-controller
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/{{ .ProjectName }}-admission-controller
+    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
+    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
     - --label=org.opencontainers.image.version={{ .Version }}
     - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
     - --label=org.opencontainers.image.revision={{ .FullCommit }}
 
 docker_manifests:
 # * KIMUP
-- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}"
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:v{{ .Version }}"
   image_templates:
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-amd64"
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-arm64v8"
-- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:latest"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:v{{ .Version }}-arm64v8"
+- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:latest"
   image_templates:
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-amd64"
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}:v{{ .Version }}-arm64v8"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:v{{ .Version }}-amd64"
+  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:v{{ .Version }}-arm64v8"
 
 # * KIMUP-OPERATOR
 - name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}"
