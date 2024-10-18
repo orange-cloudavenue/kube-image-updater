@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -86,7 +88,14 @@ func main() {
 	}
 
 	// * Config the webhook server
-	a, waitHTTP := httpserver.Init(ctx)
+	a, waitHTTP := httpserver.Init(ctx, httpserver.WithCustomHandlerForHealth(
+		func() (bool, error) {
+			_, err := net.DialTimeout("tcp", webhookPort, 5*time.Second)
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		}))
 
 	s, err := a.Add("webhook", httpserver.WithTLS(tlsC), httpserver.WithAddr(webhookPort))
 	if err != nil {
