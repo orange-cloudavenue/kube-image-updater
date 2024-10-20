@@ -83,10 +83,23 @@ jobs:
     - name: Run Go unit tests
       run: |
         go test ./...
-
+  generate:
+    needs: [pre-check]
+    name: Generate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4 # v3.5.0
+      - uses: actions/setup-go@v5 # v4.0.0
+        with:
+          go-version-file: 'go.mod'
+      - run: go generate ./...
+      - name: git diff
+        run: |
+          git diff --compact-summary --exit-code || \
+            (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
   # * Step 2: Create a new tag
   tag:
-    needs: [golangci-lint, pre-check, tag-already-exist, testsunit]
+    needs: [golangci-lint, pre-check, tag-already-exist, testsunit, generate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

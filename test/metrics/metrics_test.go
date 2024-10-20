@@ -12,6 +12,8 @@ import (
 )
 
 func TestMetric_Counter(t *testing.T) {
+	metrics.InitAll()
+
 	// Test the metrics for the actions Counter
 	list := metrics.Metrics
 
@@ -30,6 +32,8 @@ func TestMetric_Counter(t *testing.T) {
 	for _, m := range list[metrics.MetricTypeCounter] {
 		// Check if the metric is a metricCounter
 		if m, ok := m.(metrics.MetricCounter); ok {
+			m.Counter.Inc()
+
 			// fill struct test with data
 			testUnit = testsCounter{
 				{
@@ -71,10 +75,8 @@ func TestMetric_Counter(t *testing.T) {
 		// Test the metrics for the actions Counter
 		for _, tt := range testUnit {
 			t.Run(tt.name, func(t *testing.T) {
-				counter := tt.c
-				counter.Inc()
 				// Compare the metrics
-				if err := testutil.CollectAndCompare(counter, strings.NewReader(tt.data+tt.nameMetric+tt.value), tt.nameMetric); err != nil {
+				if err := testutil.CollectAndCompare(tt.c, strings.NewReader(tt.data+tt.nameMetric+tt.value), tt.nameMetric); err != nil {
 					if !tt.error {
 						t.Errorf("unexpected error: %v", err)
 					}
@@ -207,4 +209,146 @@ func TestMetric_Histogram(t *testing.T) {
 			})
 		}
 	} // end of loop over the list of metrics
+}
+
+func TestMetric_Summary(t *testing.T) {
+	// Test the metrics for the actions Summary
+	list := metrics.Metrics
+
+	type testsSummary []struct {
+		name       string
+		nameMetric string
+		data       string
+		value      string
+		summary    prometheus.Summary
+		error      bool
+	}
+	testUnit := make(testsSummary, 0)
+
+	// loop over the list of metrics
+	for _, m := range list[metrics.MetricTypeSummary] {
+		// Check if the metric is a metricSummary
+		if m, ok := m.(metrics.MetricSummary); ok {
+			// fill struct test with data
+			testUnit = testsSummary{
+				{
+					name:       "Check Summary " + m.Name,
+					nameMetric: m.Name,
+					data: fmt.Sprintf(`
+# HELP %s %s
+# TYPE %s %s
+`, m.Name, m.Help, m.Name, metrics.MetricTypeSummary),
+					value: fmt.Sprintf(`
+%s{quantile="0.5"} 0.1
+%s{quantile="0.9"} 0.1
+%s_sum 0.1
+%s_count 1
+`, m.Name, m.Name, m.Name, m.Name),
+					summary: m.Summary,
+					error:   false,
+				},
+				{
+					name:       "Check Summary with a wrong quantile " + m.Name,
+					nameMetric: m.Name,
+					data: fmt.Sprintf(`
+# HELP %s %s
+# TYPE %s %s
+`, m.Name, m.Help, m.Name, metrics.MetricTypeSummary),
+					value: fmt.Sprintf(`
+%s{quantile="0.5"} 0.1
+%s{quantile="0.9"} 0.1
+%s_sum 0.1
+%s_count 1
+`, m.Name, m.Name, m.Name, m.Name),
+					summary: m.Summary,
+					error:   true, // Error because the quantile is wrong
+				},
+			} // end of testsSummary struct
+		} // end of if m, ok := m.(metrics.MetricSummary)
+
+		// Test the metrics for the actions Summary
+		for _, tt := range testUnit {
+			t.Run(tt.name, func(t *testing.T) {
+				// Get the Duration histogram
+				tt.summary.Observe(0.1)
+
+				// Verify the histogram value
+				if err := testutil.CollectAndCompare(tt.summary, strings.NewReader(tt.data+tt.value)); err != nil {
+					if !tt.error {
+						t.Errorf("unexpected error: %v", err)
+					}
+				}
+			})
+		}
+	} // end of loop over the list of metrics
+}
+
+func TestMetric_Gauge(t *testing.T) {
+	// Test the metrics for the actions Gauge
+	list := metrics.Metrics
+
+	type testsGauge []struct {
+		name       string
+		nameMetric string
+		data       string
+		value      string
+		g          prometheus.Gauge
+		error      bool
+	}
+	testUnit := make(testsGauge, 0)
+
+	// loop over the list of metrics
+	for _, m := range list[metrics.MetricTypeGauge] {
+		// Check if the metric is a metricGauge
+		if m, ok := m.(metrics.MetricGauge); ok {
+			// fill struct test with data
+			testUnit = testsGauge{
+				{
+					name:       "Check Gauge " + m.Name,
+					nameMetric: m.Name,
+					data: fmt.Sprintf(`
+# HELP %s %s
+# TYPE %s %s
+`, m.Name, m.Help, m.Name, metrics.MetricTypeGauge),
+					value: " 0\n",
+					g:     m.Gauge,
+					error: false,
+				},
+				{
+					name:       "Check Gauge mistake between name and TYPE description " + m.Name,
+					nameMetric: m.Name,
+					data: fmt.Sprintf(`
+# HELP %s %s
+# TYPE %s_mistake_error_in_TYPE %s
+`, m.Name, m.Help, m.Name, metrics.MetricTypeGauge),
+					value: " 0\n",
+					g:     m.Gauge,
+					error: true, // Error because the gauge name is not the same in the HELP description
+				},
+				{
+					name:       "Check Gauge mistake between name and HELP description " + m.Name,
+					nameMetric: m.Name,
+					data: fmt.Sprintf(`
+# HELP %s_mistake_error_in_HELP %s
+# TYPE %s %s
+`, m.Name, m.Help, m.Name, metrics.MetricTypeGauge),
+					value: " 0\n",
+					g:     m.Gauge,
+					error: true, // Error because the gauge name is not the same in the description
+				},
+			} // end of testsGauge struct
+		} // end of if m, ok := m.(metrics.MetricGauge)
+
+		// Test the metrics for the actions Gauge
+		for _, tt := range testUnit {
+			t.Run(tt.name, func(t *testing.T) {
+				// Compare the metrics
+				if err := testutil.CollectAndCompare(tt.g, strings.NewReader(tt.data+tt.nameMetric+tt.value), tt.nameMetric); err != nil {
+					if !tt.error {
+						t.Errorf("unexpected error: %v", err)
+					}
+				}
+			})
+		} // end of loop over the list of metrics
+	}
 }

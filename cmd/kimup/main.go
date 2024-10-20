@@ -13,6 +13,7 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 )
@@ -24,6 +25,13 @@ var (
 )
 
 func init() {
+	// Initialize the metrics
+	metrics.Tags()
+	metrics.Events()
+	metrics.Actions()
+	metrics.Rules()
+	metrics.Registry()
+
 	// TODO add namespace scope
 	// Flag "loglevel" is set in log package
 	flag.Parse()

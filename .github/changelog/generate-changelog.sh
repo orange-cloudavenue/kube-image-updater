@@ -25,7 +25,7 @@ if [ -z "$PREVIOUS_CHANGELOG" ]
 then
     echo "Unable to locate previous changelog contents."
     exit 1
-fi 
+fi
 
 CHANGELOG=$($(go env GOPATH)/bin/changelog-build -this-release $TARGET_SHA \
                       -last-release $PREVIOUS_RELEASE_SHA \

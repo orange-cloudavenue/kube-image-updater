@@ -4,7 +4,7 @@ repos:
   hooks:
     - id: check-merge-conflict
     - id: trailing-whitespace
-    - id: end-of-file-fixer
+      args: ["--markdown-linebreak-ext=md"]
     - id: forbid-submodules
 
 ## GOLANG

@@ -30,9 +30,9 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 	// Add event lock
 	event.On(triggers.RefreshImage.String(), event.ListenerFunc(func(e event.Event) (err error) {
 		// Increment the counter for the events
-		metrics.Events().Total().Inc()
+		metrics.Events().TriggeredTotal.Inc()
 		// Start the timer for the event execution
-		timerEvents := metrics.Events().Duration()
+		timerEvents := metrics.Events().TriggeredDuration.NewTimer()
 		defer timerEvents.ObserveDuration()
 
 		if l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] == nil {
@@ -72,8 +72,8 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			i := utils.ImageParser(image.Spec.Image)
 
 			// Prometheus metrics - Increment the counter for the registry
-			metrics.Registry().Total().Inc()
-			timerRegistry := metrics.Registry().Duration()
+			metrics.Registry().RequestTotal.WithLabelValues(i.GetRegistry()).Inc()
+			timerRegistry := metrics.Registry().RequestDuration.NewTimer(i.GetRegistry())
 
 			re, err := registry.New(ctx, image.Spec.Image, registry.Settings{
 				InsecureTLS: image.Spec.InsecureSkipTLSVerify,
@@ -93,23 +93,24 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			timerRegistry.ObserveDuration()
 			if err != nil {
 				// Prometheus metrics - Increment the counter for the registry with error
-				metrics.Registry().TotalErr().Inc()
+				metrics.Registry().RequestErrorTotal.WithLabelValues(i.GetRegistry()).Inc()
 
 				return err
 			}
 
 			// Prometheus metrics - Increment the counter for the tags
-			metrics.Tags().Total().Inc()
-			timerTags := metrics.Tags().Duration()
+			metrics.Tags().RequestTotal.Inc()
+			timerTags := metrics.Tags().RequestDuration.NewTimer()
 
 			tagsAvailable, err := re.Tags()
 			timerTags.ObserveDuration()
 			if err != nil {
 				// Prometheus metrics - Increment the counter for the tags with error
-				metrics.Tags().TotalErr().Inc()
-
+				metrics.Tags().RequestErrorTotal.Inc()
 				return err
 			}
+
+			metrics.Tags().TagsAvailableSum.WithLabelValues(image.Spec.Image).Observe(float64(len(tagsAvailable)))
 
 			log.Debugf("[RefreshImage] %d tags available for %s", len(tagsAvailable), image.Spec.Image)
 
@@ -128,8 +129,8 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				r.Init(tag, tagsAvailable, rule.Value)
 
 				// Prometheus metrics - Increment the counter for the rules
-				metrics.Rules().Total().Inc()
-				timerRules := metrics.Rules().Duration()
+				metrics.Rules().EvaluatedTotal.Inc()
+				timerRules := metrics.Rules().EvaluatedDuration.NewTimer()
 
 				match, newTag, err := r.Evaluate()
 
@@ -138,7 +139,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 
 				if err != nil {
 					// Prometheus metrics - Increment the counter for the evaluated rule with error
-					metrics.Rules().TotalErr().Inc()
+					metrics.Rules().EvaluatedErrorTotal.Inc()
 
 					log.Errorf("Error evaluating rule: %v", err)
 					continue
@@ -159,8 +160,8 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 						}, &image, action.Data)
 
 						// Prometheus metrics - Increment the counter for the actions
-						metrics.Actions().Total().Inc()
-						timerActions := metrics.Actions().Duration()
+						metrics.Actions().ExecutedTotal.Inc()
+						timerActions := metrics.Actions().ExecutedDuration.NewTimer()
 
 						err = a.Execute(ctx)
 
@@ -169,7 +170,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 
 						if err != nil {
 							// Prometheus metrics - Increment the counter for the executed action with error
-							metrics.Actions().TotalErr().Inc()
+							metrics.Actions().ExecutedErrorTotal.Inc()
 
 							log.Errorf("Error executing action(%s): %v", action.Type, err)
 							continue
@@ -183,7 +184,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 		})
 
 		// Prometheus metrics - Increment the counter for the events evaluated with error
-		metrics.Events().TotalErr().Inc()
+		metrics.Events().TriggerdErrorTotal.Inc()
 		return retryErr
 	}), event.Normal)
 }

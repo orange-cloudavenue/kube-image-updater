@@ -12,8 +12,10 @@ require (
 	github.com/containers/image/v5 v5.32.2
 	github.com/containrrr/shoutrrr v0.8.0
 	github.com/crazy-max/diun/v4 v4.28.0
+	github.com/fbiville/markdown-table-formatter v0.3.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gookit/event v1.1.2
+	github.com/iancoleman/strcase v0.3.0
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/prometheus/client_golang v1.20.4

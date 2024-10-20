@@ -17,6 +17,7 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	client "github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 )
 
 var (
@@ -38,6 +39,9 @@ var (
 )
 
 func init() {
+	// Init Metrics
+	metrics.AdmissionController()
+
 	// webhook server running namespace (default to "default")
 	if os.Getenv("POD_NAMESPACE") != "" {
 		webhookNamespace = os.Getenv("POD_NAMESPACE")
