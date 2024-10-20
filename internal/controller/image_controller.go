@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -82,20 +83,26 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		r.Recorder.Event(&image, "Normal", string(ImageUpdate), "Image configuration has changed. Reloading image.")
 	}
 
+	// Set the status time YYYY-MM-DDTHH:MM:SSZ
+	image.SetStatusTime(time.Now().Format(time.RFC3339))
+
 	if an.CheckSum().IsNull() || !equal {
 		if err := an.CheckSum().Set(image.Spec); err != nil {
 			xlog.WithError(err).Error("unable to set checksum")
+			image.SetStatusResult("Unable to set checksum")
 			return ctrl.Result{}, err
 		}
 		if err := r.Client.Update(ctx, &image); err != nil {
 			xlog.WithError(err).Error("unable to update Image")
+			image.SetStatusResult("Unable to update Image")
 			return ctrl.Result{}, err
 		}
 	}
 
 	// * Status
-
 	image.SetStatusTag(an.Tag().Get())
+	image.SetStatusResult("Success")
+
 	if err := r.Status().Update(ctx, &image); err != nil {
 		xlog.WithError(err).Error("unable to update Image status")
 		return ctrl.Result{}, err
