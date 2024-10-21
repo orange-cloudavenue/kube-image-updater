@@ -133,12 +133,12 @@ func newGauge(name, help string) prometheus.Gauge {
 // Help: The description help text of the gauge
 // Labels: The labels of the gauge
 func newGaugeWithVec(name, help string, labels []string) *prometheus.GaugeVec {
-	if Metrics[MetricTypeGauge] == nil {
-		Metrics[MetricTypeGauge] = make(map[string]interface{})
+	if Metrics[MetricTypeGaugeVec] == nil {
+		Metrics[MetricTypeGaugeVec] = make(map[string]interface{})
 	}
 
 	// Add the gauge to the map
-	Metrics[MetricTypeGauge][name] = MetricGaugeVec{
+	Metrics[MetricTypeGaugeVec][name] = MetricGaugeVec{
 		// Create the metricBase
 		metricBase: metricBase{
 			Name: name,
@@ -151,7 +151,7 @@ func newGaugeWithVec(name, help string, labels []string) *prometheus.GaugeVec {
 		}, labels),
 	}
 
-	return Metrics[MetricTypeGauge][name].(MetricGaugeVec).GaugeVec
+	return Metrics[MetricTypeGaugeVec][name].(MetricGaugeVec).GaugeVec
 }
 
 // * Counter
@@ -192,12 +192,12 @@ func newCounter(name, help string) prometheus.Counter {
 // Help: The description help text of the counter
 // Labels: The labels of the counter
 func newCounterWithVec(name, help string, labels []string) *prometheus.CounterVec {
-	if Metrics[MetricTypeCounter] == nil {
-		Metrics[MetricTypeCounter] = make(map[string]interface{})
+	if Metrics[MetricTypeCounterVec] == nil {
+		Metrics[MetricTypeCounterVec] = make(map[string]interface{})
 	}
 
 	// Add the counter to the map
-	Metrics[MetricTypeCounter][name] = MetricCounterVec{
+	Metrics[MetricTypeCounterVec][name] = MetricCounterVec{
 		// Create the metricBase
 		metricBase: metricBase{
 			Name: name,
@@ -210,7 +210,7 @@ func newCounterWithVec(name, help string, labels []string) *prometheus.CounterVe
 		}, labels),
 	}
 
-	return Metrics[MetricTypeCounter][name].(MetricCounterVec).CounterVec
+	return Metrics[MetricTypeCounterVec][name].(MetricCounterVec).CounterVec
 }
 
 // * Summary
@@ -251,12 +251,12 @@ func newSummary(name, help string) prometheus.Summary {
 // Help: The description help text of the summary
 // Labels: The labels of the summary
 func newSummaryWithVec(name, help string, labels []string) *prometheus.SummaryVec {
-	if Metrics[MetricTypeSummary] == nil {
-		Metrics[MetricTypeSummary] = make(map[string]interface{})
+	if Metrics[MetricTypeSummaryVec] == nil {
+		Metrics[MetricTypeSummaryVec] = make(map[string]interface{})
 	}
 
 	// Add the summary to the map
-	Metrics[MetricTypeSummary][name] = MetricSummaryVec{
+	Metrics[MetricTypeSummaryVec][name] = MetricSummaryVec{
 		// Create the metricBase
 		metricBase: metricBase{
 			Name: name,
@@ -269,7 +269,7 @@ func newSummaryWithVec(name, help string, labels []string) *prometheus.SummaryVe
 		}, labels),
 	}
 
-	return Metrics[MetricTypeSummary][name].(MetricSummaryVec).SummaryVec
+	return Metrics[MetricTypeSummaryVec][name].(MetricSummaryVec).SummaryVec
 }
 
 // * Histogram
@@ -314,12 +314,12 @@ func newHistogram(name, help string) Histogram {
 // Help: The description help text of the histogram
 // Labels: The labels of the histogram
 func newHistogramVec(name, help string, labels []string) HistogramVec {
-	if Metrics[MetricTypeHistogram] == nil {
-		Metrics[MetricTypeHistogram] = make(map[string]interface{})
+	if Metrics[MetricTypeHistogramVec] == nil {
+		Metrics[MetricTypeHistogramVec] = make(map[string]interface{})
 	}
 
 	// Add the histogram to the map
-	Metrics[MetricTypeHistogram][name] = MetricHistogramVec{
+	Metrics[MetricTypeHistogramVec][name] = MetricHistogramVec{
 		// Create the metricBase
 		HistogramVec: HistogramVec{
 			prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -331,5 +331,5 @@ func newHistogramVec(name, help string, labels []string) HistogramVec {
 		},
 	}
 
-	return Metrics[MetricTypeHistogram][name].(MetricHistogramVec).HistogramVec
+	return Metrics[MetricTypeHistogramVec][name].(MetricHistogramVec).HistogramVec
 }

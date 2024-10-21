@@ -57,12 +57,20 @@ type (
 const (
 	// MetricTypeCounter is the type of the metric counter
 	MetricTypeCounter MetricType = "counter"
+	// MetricTypeCounterVec is the type of the metric counter with labels
+	MetricTypeCounterVec MetricType = "counterVec"
 	// MetricTypeGauge is the type of the metric gauge
 	MetricTypeGauge MetricType = "gauge"
+	// MetricTypeGaugeVec is the type of the metric gauge with labels
+	MetricTypeGaugeVec MetricType = "gaugeVec"
 	// MetricTypeHistogram is the type of the metric histogram
 	MetricTypeHistogram MetricType = "histogram"
+	// MetricTypeHistogramVec is the type of the metric histogram with labels
+	MetricTypeHistogramVec MetricType = "histogramVec"
 	// MetricTypeSummary is the type of the metric summary
 	MetricTypeSummary MetricType = "summary"
+	// MetricTypeSummaryVec is the type of the metric summary with labels
+	MetricTypeSummaryVec MetricType = "summaryVec"
 )
 
 var Metrics = make(map[MetricType]map[string]interface{})

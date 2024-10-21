@@ -87,6 +87,8 @@ func TestMetric_Counter(t *testing.T) {
 }
 
 func TestMetric_Histogram(t *testing.T) {
+	metrics.InitAll()
+
 	// Test the metrics for the actions Histogram
 	list := metrics.Metrics
 
@@ -212,6 +214,7 @@ func TestMetric_Histogram(t *testing.T) {
 }
 
 func TestMetric_Summary(t *testing.T) {
+	metrics.InitAll()
 	// Test the metrics for the actions Summary
 	list := metrics.Metrics
 
@@ -284,6 +287,7 @@ func TestMetric_Summary(t *testing.T) {
 }
 
 func TestMetric_Gauge(t *testing.T) {
+	metrics.InitAll()
 	// Test the metrics for the actions Gauge
 	list := metrics.Metrics
 

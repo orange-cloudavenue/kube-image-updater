@@ -110,7 +110,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				return err
 			}
 
-			metrics.Tags().TagsAvailableSum.WithLabelValues(image.Spec.Image).Observe(float64(len(tagsAvailable)))
+			metrics.Tags().AvailableSum.WithLabelValues(image.Spec.Image).Observe(float64(len(tagsAvailable)))
 
 			log.Debugf("[RefreshImage] %d tags available for %s", len(tagsAvailable), image.Spec.Image)
 
