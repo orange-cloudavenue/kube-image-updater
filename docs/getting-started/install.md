@@ -5,7 +5,7 @@ hide:
 
 # Install Kimup Operator
 
-Kimup Operator is a Kubernetes operator used to manage images and their lifecycle, manage kimup-admission-controller and kimup-webhook deployments. The operator is required for the functioning of the Kimup.
+Kimup Operator is a Kubernetes operator used to manage images and their lifecycle, manage kimup-controller deployments. The operator is required for the functioning of the Kimup.
 
 Resources managed by Kimup Operator are:
 
@@ -34,9 +34,12 @@ kubectl apply -k "https://github.com/orange-cloudavenue/kube-image-updater/manif
 
 By default, Kimup Operator is installed in the `kimup-operator` namespace.
 
-### Deploy `kimup-admission-controller` and `kimup-controller`
+!!! warning "Namespace"
+    For the moment only the `kimup-operator` namespace is supported.
 
-For deploying `kimup-admission-controller` and `kimup-controller`, create a `Kimup` resource:
+### Deploy `kimup-controller`
+
+For deploying `kimup-controller`, create a `Kimup` resource:
 
 ```yaml
 apiVersion: kimup.cloudavenue.io/v1alpha1
@@ -47,9 +50,6 @@ metadata:
   name: kimup
 spec:
   controller:
-    name: demo
-    logLevel: info
-  admissionController:
     name: demo
     logLevel: info
 ```

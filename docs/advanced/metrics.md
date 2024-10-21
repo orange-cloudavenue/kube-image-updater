@@ -9,7 +9,7 @@ kimup exposes metrics to monitor the performance. The metrics are exposed in the
 
 ## Settings
 
-The following arguments can be used to configure the metrics *(Available in kimup-operator, kimup-controller and kimup-admission-controller)*:
+The following arguments can be used to configure the metrics *(Available in kimup-operator and kimup-controller)*:
 
 | Flag           | Default  | Description               |
 | -------------- | -------- | ------------------------- |

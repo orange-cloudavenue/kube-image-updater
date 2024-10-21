@@ -6,7 +6,9 @@ nav:
   - Overview: "index.md"
   - Getting Started:
     - Installation: getting-started/install.md
-    - Howto: getting-started/howto.md
+    - Howto:
+      - Basic Usage: getting-started/howto.md
+      - Scope : getting-started/scope.md
   - Custom Resources:
     - Kimup: crd/kimup.md
     - Image: crd/image.md
@@ -25,8 +27,7 @@ nav:
       - Discord: actions/alerts/discord.md
       - Email: actions/alerts/email.md
   - Advanced:
-    - metrics: advanced/metrics.md
-    - CRD Images: advanced/crd-images.md
+    - Metrics: advanced/metrics.md
 
 # ! Other settings
 

@@ -15,11 +15,10 @@ hide:
 
 **kimup** is designed to be simple to use and easy to deploy. It is an kubernetes operator with custom resource definition (CRD) that allows you to define the image update strategy and schedule.
 
-The project is composed of 3 main components:
+The project is composed of 2 main components:
 
-* **kimup-operator:** The main component that reconcile `Image`,`AlertConfig` and `Kimup` CRD.
+* **kimup-operator:** The main component that reconcile `Image`,`AlertConfig` and `Kimup` CRD and serve the MutatingWebhook.
 * **kimup-controller:** The component that updates TAG of the `Image` resource.
-* **kimup-admission-controller:** The component that patch resource creation with rules defined in `Image` resource.
 
 Basic example of usage:
 

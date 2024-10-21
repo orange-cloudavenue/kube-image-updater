@@ -150,6 +150,7 @@ func (a *app) createMetrics() *server {
 func (a *app) new(opts ...Option) *server {
 	// create a new router
 	r := chi.NewRouter()
+	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
 
 	// create a new server with default parameters

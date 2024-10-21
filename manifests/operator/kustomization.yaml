@@ -6,3 +6,6 @@ resources:
   - role.yaml
   - role_binding.yaml
   - service_account.yaml
+  - webhook-certificate.yaml
+  - deployment.yaml
+  - service.yaml

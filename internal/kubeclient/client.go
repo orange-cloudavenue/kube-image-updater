@@ -43,15 +43,15 @@ type (
 	InterfaceKimup interface {
 		Image() *ImageObj
 		Alert() *AlertObj
+		Mutator() *MutatorObj
 	}
 
 	component string
 )
 
 const (
-	ComponentOperator            component = "kimup-operator"
-	ComponentController          component = "kimup-controller"
-	ComponentAdmissionController component = "kimup-admission-controller"
+	ComponentOperator   component = "kimup-operator"
+	ComponentController component = "kimup-controller"
 )
 
 func init() {

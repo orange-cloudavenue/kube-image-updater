@@ -31,21 +31,21 @@ spec:
         - type: apply
 ```
 
+In this example the image `{{dockerImages.whoami}}` will be updated every 12 hours with the latest minor version.
+
 2 - Apply the `Image` resource:
 
 ```bash
 kubectl apply -f image.yaml
 ```
 
-In this example the image `{{dockerImages.whoami}}` will be updated every 12 hours with the latest minor version.
-
 3 - Check the Image TAG:
 
 ```bash
-kubectl get image demo'
+kubectl get image demo
 
-NAME   IMAGE                  TAG
-demo   {{dockerImages.whoami}}
+NAME             IMAGE            TAG       LAST-RESULT   LAST-SYNC
+demo             {{dockerImages.whoami}}
 ```
 
 But you can force the update by running the following command:
@@ -57,8 +57,10 @@ kubectl annotate image demo kimup.cloudavenue.io/action=refresh
 The Image TAG is now updated:
 
 ```bash
-NAME   IMAGE                  TAG
-demo   {{dockerImages.whoami}}   v1.10.0
+kubectl get image demo
+
+NAME             IMAGE            TAG       LAST-RESULT   LAST-SYNC
+demo             {{dockerImages.whoami}}   v1.10.0   Success       15s
 ```
 
 4 - Make a deployment with the image:
