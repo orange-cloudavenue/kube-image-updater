@@ -56,6 +56,10 @@ func (f *FakeKubeClient) Alert() *kubeclient.AlertObj {
 	return kubeclient.NewAlert(f)
 }
 
+func (f *FakeKubeClient) AdmissionController() *kubeclient.AdmissionControllerObj {
+	return kubeclient.NewAdmissionController(f)
+}
+
 func (f *FakeKubeClient) CreateFakeImage(image v1alpha1.Image) error {
 	u, err := kubeclient.EncodeUnstructured(image)
 	if err != nil {

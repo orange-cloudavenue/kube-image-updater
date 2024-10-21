@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kimup-webhook-serving-cert
+  namespace: kimup-operator
+spec:
+  dnsNames:
+  - mutator.kimup-operator.svc
+  - mutator.kimup-operator.svc.cluster.local
+  secretName: kimup-webhook-serving-cert
+  issuerRef:
+    kind: Issuer
+    name: kimup-selfsigned-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: kimup-selfsigned-issuer
+  namespace: kimup-operator
+spec:
+  selfSigned: {}

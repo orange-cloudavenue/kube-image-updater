@@ -37,17 +37,6 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=0
-  - id: "kimup-admission-controller"
-    binary: kimup-admission-controller
-    main: ./cmd/admission-controller
-    goos:
-      - linux
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    env:
-      - CGO_ENABLED=0
 
 dockers:
   # * KIMUP
@@ -128,45 +117,6 @@ dockers:
     - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
     - --label=org.opencontainers.image.revision={{ .FullCommit }}
 
-  # * KIMUP-ADMISSION-CONTROLLER
-  - goarch: amd64
-    image_templates:
-    - "ghcr.io/orange-cloudavenue/{{.ProjectName}}-admission-controller:v{{ .Version }}-amd64"
-    dockerfile: Dockerfile
-    use: buildx
-    ids:
-      - kimup-admission-controller
-    build_flag_templates:
-    - --platform=linux/amd64
-    - "--build-arg=BINNAME=kimup-admission-controller"
-    - --pull
-    - --label=org.opencontainers.image.title="kimup-admission-controller"
-    - --label=org.opencontainers.image.description="kube-image-updater-admission-controller"
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
-    - --label=org.opencontainers.image.version={{ .Version }}
-    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-    - --label=org.opencontainers.image.revision={{ .FullCommit }}
-
-  - goarch: arm64
-    image_templates:
-    - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:v{{ .Version }}-arm64v8"
-    dockerfile: Dockerfile
-    use: buildx
-    ids:
-      - kimup-admission-controller
-    build_flag_templates:
-    - --platform=linux/arm64/v8
-    - "--build-arg=BINNAME=kimup-admission-controller"
-    - --pull
-    - --label=org.opencontainers.image.title="kimup-admission-controller"
-    - --label=org.opencontainers.image.description="kube-image-updater-admission-controller"
-    - --label=org.opencontainers.image.url=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
-    - --label=org.opencontainers.image.source=https://github.com/orange-cloudavenue/kube-image-updater-admission-controller
-    - --label=org.opencontainers.image.version={{ .Version }}
-    - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
-    - --label=org.opencontainers.image.revision={{ .FullCommit }}
-
 docker_manifests:
 # * KIMUP
 - name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-controller:v{{ .Version }}"
@@ -187,13 +137,3 @@ docker_manifests:
   image_templates:
   - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-amd64"
   - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-operator:v{{ .Version }}-arm64v8"
-
-# * KIMUP-ADMISSION-CONTROLLER
-- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:v{{ .Version }}"
-  image_templates:
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:v{{ .Version }}-amd64"
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:v{{ .Version }}-arm64v8"
-- name_template: "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:latest"
-  image_templates:
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:v{{ .Version }}-amd64"
-  - "ghcr.io/orange-cloudavenue/{{ .ProjectName }}-admission-controller:v{{ .Version }}-arm64v8"

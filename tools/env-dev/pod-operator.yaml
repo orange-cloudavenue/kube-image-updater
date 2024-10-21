@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: kimup-operator
+    app.kubernetes.io/name: kube-image-updater
+  name: kimup-operator
+  namespace: kimup-operator
+spec:
+  containers:
+    - image: kurun://cmd/operator/main.go
+      name: operator
+      ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-cert
+          readOnly: true
+  serviceAccount: kimup
+  serviceAccountName: kimup
+  volumes:
+  - name: webhook-cert
+    secret:
+      defaultMode: 420
+      secretName: kimup-webhook-serving-cert

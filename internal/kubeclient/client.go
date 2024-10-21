@@ -43,6 +43,7 @@ type (
 	InterfaceKimup interface {
 		Image() *ImageObj
 		Alert() *AlertObj
+		AdmissionController() *AdmissionControllerObj
 	}
 
 	component string

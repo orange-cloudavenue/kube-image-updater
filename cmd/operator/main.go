@@ -32,6 +32,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	kimupv1alpha1 "github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/controller"
@@ -68,6 +69,8 @@ func main() {
 
 	ctrl.SetLogger(logrusr.New(log.GetLogger()))
 
+	webhook := webhook.NewServer(webhook.Options{})
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -78,6 +81,7 @@ func main() {
 		HealthProbeBindAddress: "0", // disable health probe service
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "71be4586.cloudavenue.io",
+		WebhookServer:          webhook,
 	})
 	if err != nil {
 		log.WithError(err).Error("unable to start manager")
@@ -89,6 +93,18 @@ func main() {
 		log.WithError(err).Error("unable to create kubeclient")
 		c <- syscall.SIGINT
 	}
+
+	// ! Mutator
+
+	if err := (&controller.ImageTagMutator{
+		Client:        mgr.GetClient(),
+		KubeAPIClient: kubeAPIClient,
+	}).SetupWebhookWithManager(mgr); err != nil {
+		log.WithError(err).Error("unable to create webhook", "webhook", "ImageTagMutator")
+		c <- syscall.SIGINT
+	}
+
+	// ! Reconcilers
 
 	if err = (&controller.ImageReconciler{
 		Client:        mgr.GetClient(),

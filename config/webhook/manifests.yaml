@@ -10,17 +10,17 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-kimup-cloudavenue-io-v1alpha1-image
+      path: /mutate/image-tag
   failurePolicy: Fail
-  name: mimage.kb.io
+  name: mutator.kimup.cloudavenue.io
   rules:
   - apiGroups:
-    - kimup.cloudavenue.io
+    - ""
     apiVersions:
-    - v1alpha1
+    - v1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - images
+    - pods
   sideEffects: None

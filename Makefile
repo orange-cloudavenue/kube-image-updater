@@ -82,27 +82,37 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/operator cmd/operator/main.go
 	go build -o bin/kimup cmd/kimup/*
-	go build -o bin/admission-controller cmd/admission-controller/*
-
-.PHONY: build
-build-admission-controller: manifests generate fmt vet
-	go build -o bin/admission-controller cmd/admission-controller/*
 
 .PHONY: build-kimup
 build-kimup: manifests generate fmt vet
 	go build -o bin/kimup cmd/kimup/*
 
+.PHONY: generate-mutating-config
+generate-mutating-config: ## Generate the mutating webhook configuration.
+	go run ./tools/admission-controller/main.go
+
 .PHONY: run-operator
 run-operator: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/operator/main.go
 
+.PHONY: run-operator-in-cluster
+run-operator-in-cluster: manifests generate fmt vet ## Run a controller from your host.
+	kubectl -n kimup-operator delete po kimup-operator || true
+	kubectl create ns kimup-operator || true
+	kubectl apply -k manifests/crd
+	kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.1/cert-manager.yaml --wait=true
+	kubectl -n kimup-operator apply --filename="manifests/operator/role.yaml,manifests/operator/role_binding.yaml,manifests/operator/service_account.yaml,manifests/operator/webhook-certificate.yaml,manifests/operator/service.yaml" --wait=true
+	kubectl wait --for=condition=Available deployment/cert-manager -n cert-manager --timeout=300s
+	kubectl wait --for=condition=Ready certificate/kimup-webhook-serving-cert -n kimup-operator
+	kurun apply -f tools/env-dev/pod-operator.yaml
+	kubectl wait --for=condition=Ready pod/kimup-operator -n kimup-operator
+	kubectl apply -f tools/env-dev/whoami-deployment.yaml || true
+	kubectl -n kimup-operator logs kimup-operator -f
+	kubectl -n kimup-operator delete po kimup-operator
+
 .PHONY: run-kimup
 run-kimup: manifests generate fmt vet ## Run the image updater from your host.
 	go run ./cmd/kimup
-
-.PHONY: run-admission-controller
-run-admission-controller: manifests generate fmt vet ## Run the admission-controller from your host.
-	go run ./cmd/admission-controller/
 
 .PHONY: run-mkdocs
 run-mkdocs: ## Run mkdocs to serve the documentation locally.
