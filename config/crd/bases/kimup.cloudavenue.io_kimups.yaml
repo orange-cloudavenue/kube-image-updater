@@ -24,7 +24,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Kimup is the Schema for the kimups API
+        description: Kimup is the Schema for the kimups API. Permit to manage the
+          Kimup instances. (Controller and AdmissionController)
         properties:
           apiVersion:
             description: |-
@@ -44,12 +45,16 @@ spec:
           metadata:
             type: object
           spec:
-            description: KimupSpec defines the desired state of Kimup
+            description: Spec defines the desired state of Kimup
             properties:
               admissionController:
+                description: AdmissionController is a map of settings that will be
+                  used to configure the admissionController. If not set, the admissionController
+                  will not be deployed.
                 properties:
                   affinity:
-                    description: Affinity is a group of affinity scheduling rules.
+                    description: Affinity is a map of affinity settings that will
+                      be added to the Kimup pods.
                     properties:
                       nodeAffinity:
                         description: Describes node affinity scheduling rules for
@@ -978,6 +983,8 @@ spec:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Annotations is a key value map that will be added
+                      to the Kimup pods.
                     type: object
                   deploymentType:
                     default: Deployment
@@ -986,6 +993,8 @@ spec:
                     - DaemonSet
                     type: string
                   env:
+                    description: Env is a list of key value pairs that will be added
+                      to the Kimup pods.
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
@@ -1107,56 +1116,95 @@ spec:
                   healthz:
                     default:
                       enabled: true
+                    description: Healthz is a map of settings that will be used to
+                      configure the healthz probe. If not set, the probe will be enabled.
                     properties:
                       enabled:
                         default: true
+                        description: Enabled is a boolean that enables or disables
+                          the probe. If not set, the probe will be enabled.
                         type: boolean
                       path:
+                        description: Path is the path where the probe will be exposed.
+                          If not set, the default path will be used. See https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         type: string
                       port:
+                        description: Port is the port number where the probe will
+                          be exposed. If not set, the default port will be used. See
+                          https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         format: int32
                         type: integer
                     type: object
                   image:
+                    description: Image of the Kimup container. If not set, the default
+                      image will be used.
                     type: string
                   labels:
                     additionalProperties:
                       type: string
+                    description: Labels is a key value map that will be added to the
+                      Kimup pods.
                     type: object
                   logLevel:
                     default: info
+                    description: LogLevel is a string that will be used to configure
+                      the log level of the Kimup instance. If not set, the info log
+                      level will be used.
                     enum:
                     - debug
                     - info
                     - warn
                     - error
+                    - fatal
+                    - panic
+                    - trace
                     type: string
                   metrics:
                     default:
                       enabled: true
+                    description: Metrics is a map of settings that will be used to
+                      configure the metrics probe. If not set, the probe will be enabled.
                     properties:
                       enabled:
                         default: true
+                        description: Enabled is a boolean that enables or disables
+                          the probe. If not set, the probe will be enabled.
                         type: boolean
                       path:
+                        description: Path is the path where the probe will be exposed.
+                          If not set, the default path will be used. See https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         type: string
                       port:
+                        description: Port is the port number where the probe will
+                          be exposed. If not set, the default port will be used. See
+                          https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         format: int32
                         type: integer
                     type: object
+                  name:
+                    description: The name of the Kimup instance in the suffix of the
+                      resource names.
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
+                    description: NodeSelector is a map of node selector settings that
+                      will be added to the Kimup pods.
                     type: object
                   priorityClassName:
+                    description: PriorityClassName is the name of the priority class
+                      that will be used by the Kimup pods.
                     type: string
                   replicas:
                     default: 3
+                    description: Replicas is the number of replicas that will be used
+                      by the admissionController deployment. If not set, 3 replicas
+                      will be used. (Only for Deployment)
                     format: int32
                     type: integer
                   resources:
-                    description: ResourceRequirements describes the compute resource
-                      requirements.
+                    description: Resources is a map of resource requirements that
+                      will be added to the Kimup pods.
                     properties:
                       claims:
                         description: |-
@@ -1216,8 +1264,12 @@ spec:
                     type: object
                   serviceAccountName:
                     default: kimup
+                    description: ServiceAccountName is the name of the service account
+                      that will be used by the Kimup pods.
                     type: string
                   tolerations:
+                    description: Tolerations is a list of tolerations that will be
+                      added to the Kimup pods.
                     items:
                       description: |-
                         The pod this Toleration is attached to tolerates any taint that matches
@@ -1256,6 +1308,8 @@ spec:
                       type: object
                     type: array
                   topologySpreadConstraints:
+                    description: TopologySpreadConstraints is a list of constraints
+                      that will be added to the Kimup pods.
                     items:
                       description: TopologySpreadConstraint specifies how to spread
                         matching pods among the given topology.
@@ -1430,11 +1484,17 @@ spec:
                       - whenUnsatisfiable
                       type: object
                     type: array
+                required:
+                - name
                 type: object
               controller:
+                description: Controller is a map of settings that will be used to
+                  configure the controller. If not set, the controller will not be
+                  deployed.
                 properties:
                   affinity:
-                    description: Affinity is a group of affinity scheduling rules.
+                    description: Affinity is a map of affinity settings that will
+                      be added to the Kimup pods.
                     properties:
                       nodeAffinity:
                         description: Describes node affinity scheduling rules for
@@ -2363,8 +2423,12 @@ spec:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Annotations is a key value map that will be added
+                      to the Kimup pods.
                     type: object
                   env:
+                    description: Env is a list of key value pairs that will be added
+                      to the Kimup pods.
                     items:
                       description: EnvVar represents an environment variable present
                         in a Container.
@@ -2486,52 +2550,88 @@ spec:
                   healthz:
                     default:
                       enabled: true
+                    description: Healthz is a map of settings that will be used to
+                      configure the healthz probe. If not set, the probe will be enabled.
                     properties:
                       enabled:
                         default: true
+                        description: Enabled is a boolean that enables or disables
+                          the probe. If not set, the probe will be enabled.
                         type: boolean
                       path:
+                        description: Path is the path where the probe will be exposed.
+                          If not set, the default path will be used. See https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         type: string
                       port:
+                        description: Port is the port number where the probe will
+                          be exposed. If not set, the default port will be used. See
+                          https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         format: int32
                         type: integer
                     type: object
                   image:
+                    description: Image of the Kimup container. If not set, the default
+                      image will be used.
                     type: string
                   labels:
                     additionalProperties:
                       type: string
+                    description: Labels is a key value map that will be added to the
+                      Kimup pods.
                     type: object
                   logLevel:
                     default: info
+                    description: LogLevel is a string that will be used to configure
+                      the log level of the Kimup instance. If not set, the info log
+                      level will be used.
                     enum:
                     - debug
                     - info
                     - warn
                     - error
+                    - fatal
+                    - panic
+                    - trace
                     type: string
                   metrics:
                     default:
                       enabled: true
+                    description: Metrics is a map of settings that will be used to
+                      configure the metrics probe. If not set, the probe will be enabled.
                     properties:
                       enabled:
                         default: true
+                        description: Enabled is a boolean that enables or disables
+                          the probe. If not set, the probe will be enabled.
                         type: boolean
                       path:
+                        description: Path is the path where the probe will be exposed.
+                          If not set, the default path will be used. See https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         type: string
                       port:
+                        description: Port is the port number where the probe will
+                          be exposed. If not set, the default port will be used. See
+                          https://pkg.go.dev/github.com/orange-cloudavenue/kube-image-updater@v0.0.1/internal/models#pkg-variables.
                         format: int32
                         type: integer
                     type: object
+                  name:
+                    description: The name of the Kimup instance in the suffix of the
+                      resource names.
+                    type: string
                   nodeSelector:
                     additionalProperties:
                       type: string
+                    description: NodeSelector is a map of node selector settings that
+                      will be added to the Kimup pods.
                     type: object
                   priorityClassName:
+                    description: PriorityClassName is the name of the priority class
+                      that will be used by the Kimup pods.
                     type: string
                   resources:
-                    description: ResourceRequirements describes the compute resource
-                      requirements.
+                    description: Resources is a map of resource requirements that
+                      will be added to the Kimup pods.
                     properties:
                       claims:
                         description: |-
@@ -2591,8 +2691,12 @@ spec:
                     type: object
                   serviceAccountName:
                     default: kimup
+                    description: ServiceAccountName is the name of the service account
+                      that will be used by the Kimup pods.
                     type: string
                   tolerations:
+                    description: Tolerations is a list of tolerations that will be
+                      added to the Kimup pods.
                     items:
                       description: |-
                         The pod this Toleration is attached to tolerates any taint that matches
@@ -2631,6 +2735,8 @@ spec:
                       type: object
                     type: array
                   topologySpreadConstraints:
+                    description: TopologySpreadConstraints is a list of constraints
+                      that will be added to the Kimup pods.
                     items:
                       description: TopologySpreadConstraint specifies how to spread
                         matching pods among the given topology.
@@ -2805,17 +2911,16 @@ spec:
                       - whenUnsatisfiable
                       type: object
                     type: array
+                required:
+                - name
                 type: object
             type: object
           status:
-            description: KimupStatus defines the observed state of Kimup
+            description: Status defines the observed state of Kimup
             properties:
               admissionController:
+                description: AdmissionController status
                 properties:
-                  isRollingUpdate:
-                    description: IsRollingUpdate is true if the kimup instance is
-                      being updated
-                    type: boolean
                   state:
                     description: |-
                       Status of the Kimup Instance
@@ -2825,11 +2930,8 @@ spec:
                     type: string
                 type: object
               controller:
+                description: Controller status
                 properties:
-                  isRollingUpdate:
-                    description: IsRollingUpdate is true if the kimup instance is
-                      being updated
-                    type: boolean
                   state:
                     description: |-
                       Status of the Kimup Instance
