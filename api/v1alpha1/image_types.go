@@ -114,7 +114,7 @@ type (
 // +kubebuilder:printcolumn:name="Image",type=string,JSONPath=`.spec.image`
 // +kubebuilder:printcolumn:name="Tag",type=string,JSONPath=`.status.tag`
 // +kubebuilder:printcolumn:name="Last-Result",type=string,JSONPath=`.status.result`
-// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.status.age`
+// +kubebuilder:printcolumn:name="Last-Sync",type=date,JSONPath=`.status.age`
 type Image struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
