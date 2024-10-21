@@ -80,7 +80,7 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	equal, err := an.CheckSum().IsEqual(image.Spec)
 	if err != nil || !equal {
 		an.Action().Set(annotations.ActionReload)
-		image.SetStatusResult(string(kimupv1alpha1.ImageStatusLastSyncScheduled))
+		image.SetStatusResult(kimupv1alpha1.ImageStatusLastSyncScheduled)
 		r.Recorder.Event(&image, "Normal", string(ImageUpdate), "Image configuration has changed. Reloading image.")
 	}
 

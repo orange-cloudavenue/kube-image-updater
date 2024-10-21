@@ -165,7 +165,7 @@ func (i *ImageObj) Watch(ctx context.Context) (chan WatchInterface[v1alpha1.Imag
 }
 
 // UpdateStatus updates the status of the image object.
-// It takes a context and a pointer to the image object as parameters.
+// It takes a context and a image object as parameters.
 // Returns an error if the operation fails; otherwise, it returns nil.
 func (i *ImageObj) UpdateStatus(ctx context.Context, image v1alpha1.Image) error {
 	u, err := encodeUnstructured(image)
