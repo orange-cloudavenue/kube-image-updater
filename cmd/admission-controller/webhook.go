@@ -17,6 +17,7 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/patch"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
 // func serveHandler
@@ -162,23 +163,26 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 		}).Info("Generate Patch")
 
 	for i, container := range pod.Spec.Containers {
-		// check if an annotation exist
-		crdName, _ := an.Images().Get(container.Image)
+		imageP := utils.ImageParser(container.Image)
+
+		// TODO Why is this not used? Annotation is never set.
+		crdName, _ := an.Images().Get(imageP.GetImageWithoutTag())
 
 		// If crdName is empty, it means that we need to find it
 		var image v1alpha1.Image
 		if crdName == "" {
 			// find the image associated with the pod
-			image, err = kubeClient.Image().Find(ctx, pod.Namespace, container.Image)
+			image, err = kubeClient.Image().Find(ctx, pod.Namespace, imageP.GetImageWithoutTag())
 			if err != nil {
 				// increment the total number of errors
 				metrics.AdmissionControllerPatch().TotalErr().Inc()
 
 				log.
 					WithFields(logrus.Fields{
-						"Namespace": pod.Namespace,
-						"Name":      pod.Name,
-						"Container": container.Name,
+						"Namespace":      pod.Namespace,
+						"Name":           pod.Name,
+						"Container":      container.Name,
+						"ContainerImage": imageP.GetImageWithoutTag(),
 					}).
 					WithError(err).Error("Failed to find kind Image")
 				continue
@@ -191,9 +195,10 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 
 				log.
 					WithFields(logrus.Fields{
-						"Namespace": pod.Namespace,
-						"Name":      pod.Name,
-						"Container": container.Name,
+						"Namespace":      pod.Namespace,
+						"Name":           pod.Name,
+						"Container":      container.Name,
+						"ContainerImage": crdName,
 					}).WithError(err).Error("Failed to get kind Image")
 				continue
 			}
