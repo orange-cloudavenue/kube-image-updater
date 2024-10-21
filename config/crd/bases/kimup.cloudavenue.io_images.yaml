@@ -21,6 +21,12 @@ spec:
     - jsonPath: .status.tag
       name: Tag
       type: string
+    - jsonPath: .status.result
+      name: Last-Result
+      type: string
+    - jsonPath: .status.age
+      name: Last-Sync
+      type: date
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -213,12 +219,18 @@ spec:
           status:
             description: ImageStatus defines the observed state of Image
             properties:
+              age:
+                type: string
+              result:
+                type: string
               tag:
                 description: |-
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
                   Important: Run "make" to regenerate code after modifying this file
                 type: string
             required:
+            - age
+            - result
             - tag
             type: object
         type: object
