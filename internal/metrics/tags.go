@@ -5,48 +5,22 @@ import (
 )
 
 type (
-	tags struct{}
+	tags struct {
+		AvailableSum      *prometheus.SummaryVec `labels:"image_name" help:"The total number of tags available for an image."`
+		RequestTotal      prometheus.Counter     `help:"The total number of requests to list tags."`
+		RequestErrorTotal prometheus.Counter     `help:"The total number returned an error when calling list tags."`
+		RequestDuration   Histogram              `help:"The duration in seconds of the request to list tags."`
+	}
 )
 
-var (
-	// Prometheus metrics
-	tagsTotal    prometheus.Counter   = NewCounter("tags_total", "The total number of func tags is called to list tags.")
-	tagsErrTotal prometheus.Counter   = NewCounter("tags_error_total", "The total number return by the func tags with error.")
-	tagsDuration prometheus.Histogram = NewHistogram("tags_duration_seconds", "The duration in seconds for func tags to list the tags.")
-)
+var tagMetrics tags
 
 // Tags returns a new tags.
 // This is the metrics for the tags.
-func Tags() *tags {
-	return &tags{}
-}
+func Tags() tags {
+	if tagMetrics.AvailableSum == nil {
+		tagMetrics = initMetrics(tags{})
+	}
 
-// Total returns the total number of func tags is called.
-// The counter is used to observe the number of func tags is executed.
-// The counter is incremented each time a tag is executed
-// A good practice is to use the following pattern:
-//
-// metrics.Tags().Total().Inc()
-func (a *tags) Total() prometheus.Counter {
-	return tagsTotal
-}
-
-// TotalErr returns the total number of func tags called with error.
-// The counter is used to observe the number of func tags that failed.
-// The counter is incremented each time a tag fails.
-// A good practice is to use the following pattern:
-//
-// metrics.Tags().TotalErr().Inc()
-func (a *tags) TotalErr() prometheus.Counter {
-	return tagsErrTotal
-}
-
-// Duration returns the duration of the func tags execution.
-// A good practice is to use the following pattern:
-//
-// timerTags := metrics.Tags().Duration()
-//
-// defer timerTags.ObserveDuration()
-func (a *tags) Duration() *prometheus.Timer {
-	return prometheus.NewTimer(tagsDuration)
+	return tagMetrics
 }

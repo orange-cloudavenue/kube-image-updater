@@ -23,8 +23,8 @@ import (
 // func serveHandler
 func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	// Prometheus metrics
-	metrics.AdmissionController().Total().Inc()
-	timeAC := metrics.AdmissionController().Duration()
+	metrics.AdmissionController().RequestTotal.Inc()
+	timeAC := metrics.AdmissionController().RequestDuration.NewTimer()
 	defer timeAC.ObserveDuration()
 
 	var body []byte
@@ -35,7 +35,7 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(body) == 0 {
 		// increment the total number of errors
-		metrics.AdmissionController().TotalErr().Inc()
+		metrics.AdmissionController().RequestErrorTotal.Inc()
 
 		log.Error("empty body")
 		http.Error(w, "empty body", http.StatusBadRequest)
@@ -46,7 +46,7 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		// increment the total number of errors
-		metrics.AdmissionController().TotalErr().Inc()
+		metrics.AdmissionController().RequestErrorTotal.Inc()
 
 		http.Error(w, "invalid Content-Type, expect `application/json`", http.StatusUnsupportedMediaType)
 		return
@@ -56,7 +56,7 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	ar := admissionv1.AdmissionReview{}
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
 		// increment the total number of errors
-		metrics.AdmissionController().TotalErr().Inc()
+		metrics.AdmissionController().RequestErrorTotal.Inc()
 
 		log.WithError(err).Warn("Can't decode body")
 		admissionResponse = &admissionv1.AdmissionResponse{
@@ -84,13 +84,13 @@ func ServeHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := json.Marshal(admissionReview)
 	if err != nil {
 		// increment the total number of errors
-		metrics.AdmissionController().TotalErr().Inc()
+		metrics.AdmissionController().RequestErrorTotal.Inc()
 
 		http.Error(w, fmt.Sprintf("could not encode response: %v", err), http.StatusInternalServerError)
 	}
 	if _, err := w.Write(resp); err != nil {
 		// increment the total number of errors
-		metrics.AdmissionController().TotalErr().Inc()
+		metrics.AdmissionController().RequestErrorTotal.Inc()
 
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}
@@ -139,8 +139,8 @@ func mutate(ctx context.Context, ar *admissionv1.AdmissionReview) *admissionv1.A
 // create mutation patch for pod.
 func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 	// Metrics - increment the total number of patch
-	metrics.AdmissionControllerPatch().Total().Inc()
-	timePatch := metrics.AdmissionControllerPatch().Duration()
+	metrics.AdmissionController().PatchTotal.Inc()
+	timePatch := metrics.AdmissionController().PatchDuration.NewTimer()
 	defer timePatch.ObserveDuration()
 
 	var err error
@@ -148,7 +148,7 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 	an := annotations.New(ctx, pod)
 	if !an.Enabled().Get() {
 		// increment the total number of errors
-		metrics.AdmissionControllerPatch().TotalErr().Inc()
+		metrics.AdmissionController().PatchErrorTotal.Inc()
 
 		return nil, fmt.Errorf("annotation not enabled")
 	}
@@ -175,7 +175,7 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 			image, err = kubeClient.Image().Find(ctx, pod.Namespace, imageP.GetImageWithoutTag())
 			if err != nil {
 				// increment the total number of errors
-				metrics.AdmissionControllerPatch().TotalErr().Inc()
+				metrics.AdmissionController().PatchErrorTotal.Inc()
 
 				log.
 					WithFields(logrus.Fields{
@@ -191,7 +191,7 @@ func createPatch(ctx context.Context, pod *corev1.Pod) ([]byte, error) {
 			image, err = kubeClient.Image().Get(ctx, pod.Namespace, crdName)
 			if err != nil {
 				// increment the total number of errors
-				metrics.AdmissionControllerPatch().TotalErr().Inc()
+				metrics.AdmissionController().PatchErrorTotal.Inc()
 
 				log.
 					WithFields(logrus.Fields{

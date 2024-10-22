@@ -5,49 +5,21 @@ import (
 )
 
 type (
-	events struct{}
+	events struct {
+		TriggeredTotal     prometheus.Counter `help:"The total number of events triggered."`
+		TriggerdErrorTotal prometheus.Counter `help:"The total number of events triggered with error."`
+		TriggeredDuration  Histogram          `help:"The duration in seconds of events triggered."`
+	}
 )
 
-var (
-	// Prometheus metrics
-	eventsTotal    prometheus.Counter   = NewCounter("events_total", "The total number of events.")
-	eventsTotalErr prometheus.Counter   = NewCounter("events_total_err", "The total number of events with error.")
-	eventsDuration prometheus.Histogram = NewHistogram("events_duration_seconds", "The duration in seconds of events.")
-)
+var eventsMetrics events
 
 // Events returns a new events.
 // This is the metrics for the events.
-func Events() *events {
-	return &events{}
-}
+func Events() events {
+	if eventsMetrics.TriggeredTotal == nil {
+		eventsMetrics = initMetrics(events{})
+	}
 
-// Total returns the total number of event performed.
-// The counter is used to observe the number of events that have been executed.
-// The counter is incremented each time an event is executed
-// A good practice is to use the following pattern:
-//
-// metrics.Events().Total().Inc()
-func (a *events) Total() prometheus.Counter {
-	return eventsTotal
-}
-
-// TotalErr returns the total number of event performed with error.
-// The counter is used to observe the number of events that failed.
-// The counter is incremented each time an event fails.
-// A good practice is to use the following pattern:
-//
-// metrics.Events().TotalErr().Inc()
-func (a *events) TotalErr() prometheus.Counter {
-	return eventsTotalErr
-}
-
-// Duration returns a prometheus histogram object.
-// The histogram is used to observe the duration of the events execution.
-// A good practice is to use the following pattern:
-//
-// timerEvents := metrics.Events().Duration()
-//
-// defer timerEvents.ObserveDuration()
-func (a *events) Duration() *prometheus.Timer {
-	return prometheus.NewTimer(eventsDuration)
+	return eventsMetrics
 }
