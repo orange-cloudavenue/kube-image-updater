@@ -24,6 +24,9 @@ nav:
       - Getting Started: actions/alerts/getting-start.md
       - Discord: actions/alerts/discord.md
       - Email: actions/alerts/email.md
+  - Advanced:
+    - metrics: advanced/metrics.md
+    - CRD Images: advanced/crd-images.md
 
 # ! Other settings
 
