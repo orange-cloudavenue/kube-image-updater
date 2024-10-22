@@ -52,25 +52,22 @@ type (
 	}
 
 	MetricType string
+
+	Metric interface {
+		GetHelp() string
+		GetName() string
+	}
 )
 
 const (
 	// MetricTypeCounter is the type of the metric counter
 	MetricTypeCounter MetricType = "counter"
-	// MetricTypeCounterVec is the type of the metric counter with labels
-	MetricTypeCounterVec MetricType = "counterVec"
 	// MetricTypeGauge is the type of the metric gauge
 	MetricTypeGauge MetricType = "gauge"
-	// MetricTypeGaugeVec is the type of the metric gauge with labels
-	MetricTypeGaugeVec MetricType = "gaugeVec"
 	// MetricTypeHistogram is the type of the metric histogram
 	MetricTypeHistogram MetricType = "histogram"
-	// MetricTypeHistogramVec is the type of the metric histogram with labels
-	MetricTypeHistogramVec MetricType = "histogramVec"
 	// MetricTypeSummary is the type of the metric summary
 	MetricTypeSummary MetricType = "summary"
-	// MetricTypeSummaryVec is the type of the metric summary with labels
-	MetricTypeSummaryVec MetricType = "summaryVec"
 )
 
 var Metrics = make(map[MetricType]map[string]interface{})
@@ -82,4 +79,14 @@ func InitAll() {
 	Rules()
 	Registry()
 	AdmissionController()
+}
+
+// GetHelp returns the help text of the metric
+func (m metricBase) GetHelp() string {
+	return m.Help
+}
+
+// GetName returns the name of the metric
+func (m metricBase) GetName() string {
+	return m.Name
 }

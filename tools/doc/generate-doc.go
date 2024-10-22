@@ -37,26 +37,9 @@ func main() {
 
 			mMap := map[string]string{}
 
-			for mType, mm := range metrics.Metrics {
+			for _, mm := range metrics.Metrics {
 				for name, m := range mm {
-					switch mType {
-					case metrics.MetricTypeCounter:
-						mMap[name] = m.(metrics.MetricCounter).Help
-					case metrics.MetricTypeCounterVec:
-						mMap[name] = m.(metrics.MetricCounterVec).Help
-					case metrics.MetricTypeGauge:
-						mMap[name] = m.(metrics.MetricGauge).Help
-					case metrics.MetricTypeGaugeVec:
-						mMap[name] = m.(metrics.MetricGaugeVec).Help
-					case metrics.MetricTypeHistogram:
-						mMap[name] = m.(metrics.MetricHistogram).Help
-					case metrics.MetricTypeHistogramVec:
-						mMap[name] = m.(metrics.MetricHistogramVec).Help
-					case metrics.MetricTypeSummary:
-						mMap[name] = m.(metrics.MetricSummary).Help
-					case metrics.MetricTypeSummaryVec:
-						mMap[name] = m.(metrics.MetricSummaryVec).Help
-					}
+					mMap[name] = m.(metrics.Metric).GetHelp()
 				}
 			}
 
@@ -110,35 +93,3 @@ func main() {
 
 	os.Exit(0)
 }
-
-// func toto() string {
-// 	metrics.InitAll()
-
-// 	mMap := map[string]string{}
-
-// 	for mType := range metrics.Metrics {
-// 		for name, m := range metrics.Metrics[mType] {
-// 			switch mType {
-// 			case metrics.MetricTypeCounter:
-// 				pp.Sprintf("name: %v, m: %v", name, m)
-// 				mMap[name] = m.(metrics.MetricCounter).Help
-// 			case metrics.MetricTypeCounterVec:
-// 				mMap[name] = m.(metrics.MetricCounterVec).Help
-// 			case metrics.MetricTypeGauge:
-// 				mMap[name] = m.(metrics.MetricGauge).Help
-// 			case metrics.MetricTypeGaugeVec:
-// 				mMap[name] = m.(metrics.MetricGaugeVec).Help
-// 			case metrics.MetricTypeHistogram:
-// 				mMap[name] = m.(metrics.MetricHistogram).Help
-// 			case metrics.MetricTypeHistogramVec:
-// 				mMap[name] = m.(metrics.MetricHistogramVec).Help
-// 			case metrics.MetricTypeSummary:
-// 				mMap[name] = m.(metrics.MetricSummary).Help
-// 			case metrics.MetricTypeSummaryVec:
-// 				mMap[name] = m.(metrics.MetricSummaryVec).Help
-// 			}
-// 		}
-// 	}
-// 	os.Exit(0)
-// 	return "toto"
-// }

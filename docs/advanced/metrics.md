@@ -36,7 +36,7 @@ The following metrics are exposed:
 | kimup_events_triggerd_error_total              | The total number of events triggered with error.            |
 | kimup_events_triggered_duration                | The duration in seconds of events triggered.                |
 | kimup_events_triggered_total                   | The total number of events triggered.                       |
-| kimup_registry_request_duration                |                                                             |
+| kimup_registry_request_duration                | The duration in seconds of registry evaluated.              |
 | kimup_registry_request_error_total             | The total number of registry evaluated with error.          |
 | kimup_registry_request_total                   | The total number of registry evaluated.                     |
 | kimup_rules_evaluated_duration                 | The duration in seconds of rules evaluated.                 |
