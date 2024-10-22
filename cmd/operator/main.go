@@ -84,7 +84,7 @@ func main() {
 		c <- syscall.SIGINT
 	}
 
-	kubeAPIClient, err := kubeclient.NewFromRestConfig(ctrl.GetConfigOrDie())
+	kubeAPIClient, err := kubeclient.NewFromRestConfig(ctrl.GetConfigOrDie(), kubeclient.ComponentOperator)
 	if err != nil {
 		log.WithError(err).Error("unable to create kubeclient")
 		c <- syscall.SIGINT

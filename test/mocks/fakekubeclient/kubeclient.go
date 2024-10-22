@@ -44,6 +44,10 @@ func (f *FakeKubeClient) GetValueOrValueFrom(ctx context.Context, namespace stri
 	return args.Get(0), args.Error(1)
 }
 
+func (f *FakeKubeClient) GetComponent() string {
+	return "unit-test"
+}
+
 func (f *FakeKubeClient) Image() *kubeclient.ImageObj {
 	return kubeclient.NewImage(f)
 }

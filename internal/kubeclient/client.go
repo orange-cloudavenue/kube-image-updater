@@ -22,6 +22,7 @@ var _ Interface = &Client{}
 
 type (
 	Client struct {
+		component component
 		kubernetes.Interface
 		d dynamic.Interface
 	}
@@ -36,12 +37,21 @@ type (
 		DynamicResource(resource schema.GroupVersionResource) dynamic.NamespaceableResourceInterface
 		GetPullSecretsForImage(ctx context.Context, image v1alpha1.Image) (auths K8sDockerRegistrySecretData, err error)
 		GetValueOrValueFrom(ctx context.Context, namespace string, v v1alpha1.ValueOrValueFrom) (any, error)
+		GetComponent() string
 	}
 
 	InterfaceKimup interface {
 		Image() *ImageObj
 		Alert() *AlertObj
 	}
+
+	component string
+)
+
+const (
+	ComponentOperator            component = "kimup-operator"
+	ComponentController          component = "kimup-controller"
+	ComponentAdmissionController component = "kimup-admission-controller"
 )
 
 func init() {
@@ -52,17 +62,17 @@ func init() {
 
 // New creates a new kubernetes client
 // kubeConfigPath is the path to the kubeconfig file (empty for in-cluster)
-func New(kubeConfigPath string) (Interface, error) {
+func New(kubeConfigPath string, c component) (Interface, error) {
 	config, err := getConfig(kubeConfigPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewFromRestConfig(config)
+	return NewFromRestConfig(config, c)
 }
 
 // NewFromRestConfig creates a new kubernetes client from a rest config
-func NewFromRestConfig(config *rest.Config) (*Client, error) {
+func NewFromRestConfig(config *rest.Config, c component) (*Client, error) {
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
@@ -76,6 +86,7 @@ func NewFromRestConfig(config *rest.Config) (*Client, error) {
 	return &Client{
 		Interface: client,
 		d:         dynamicClient,
+		component: c,
 	}, nil
 }
 
@@ -137,4 +148,8 @@ func (c *Client) GetPullSecretsForImage(ctx context.Context, image v1alpha1.Imag
 	}
 
 	return auths, nil
+}
+
+func (c *Client) GetComponent() string {
+	return string(c.component)
 }

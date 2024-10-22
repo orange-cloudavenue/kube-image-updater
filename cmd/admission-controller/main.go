@@ -67,7 +67,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
 
 	// kubernetes golang library provide flag "kubeconfig" to specify the path to the kubeconfig file
-	kubeClient, err = client.New(flag.Lookup("kubeconfig").Value.String())
+	kubeClient, err = client.New(flag.Lookup("kubeconfig").Value.String(), client.ComponentAdmissionController)
 	if err != nil {
 		log.WithError(err).Panicf("Error creating kubeclient")
 	}
