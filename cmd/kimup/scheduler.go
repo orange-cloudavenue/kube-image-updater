@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/util/retry"
 
+	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/actions"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
@@ -53,7 +54,20 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			defer cancel()
 
 			image, err := k.Image().Get(ctx, e.Data()["namespace"].(string), e.Data()["image"].(string))
+			defer func() {
+				// update the status of the image
+				image.SetStatusTime(time.Now().Format(time.RFC3339))
+				err := k.Image().UpdateStatus(ctx, image)
+				if err != nil {
+					log.WithError(err).
+						WithFields(log.Fields{
+							"Namespace": e.Data()["namespace"],
+							"Image":     e.Data()["image"],
+						}).Error("Error updating status of image")
+				}
+			}()
 			if err != nil {
+				image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorGetImage)
 				if err := crontab.RemoveJob(crontab.BuildKey(e.Data()["namespace"].(string), e.Data()["image"].(string))); err != nil {
 					return err
 				}
@@ -64,6 +78,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 
 			if image.Spec.ImagePullSecrets != nil {
 				auths, err = k.GetPullSecretsForImage(ctx, image)
+				image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorPullSecrets)
 				if err != nil {
 					return err
 				}
@@ -94,7 +109,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			if err != nil {
 				// Prometheus metrics - Increment the counter for the registry with error
 				metrics.Registry().RequestErrorTotal.WithLabelValues(i.GetRegistry()).Inc()
-
+				image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorRegistry)
 				return err
 			}
 
@@ -117,6 +132,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			for _, rule := range image.Spec.Rules {
 				r, err := rules.GetRule(rule.Type)
 				if err != nil {
+					image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorGetRule)
 					log.Errorf("Error getting rule: %v", err)
 					continue
 				}
@@ -148,6 +164,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				if match {
 					for _, action := range rule.Actions {
 						a, err := actions.GetActionWithUntypedName(action.Type)
+						image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorAction)
 						if err != nil {
 							log.Errorf("Error getting action: %v", err)
 							continue
@@ -180,6 +197,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				}
 			}
 
+			image.SetStatusResult(v1alpha1.ImageStatusLastSyncSuccess)
 			return k.Image().Update(ctx, image)
 		})
 

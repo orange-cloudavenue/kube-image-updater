@@ -1,0 +1,3 @@
+```release-note:chore
+`chore` - Get crd image status information.
+```

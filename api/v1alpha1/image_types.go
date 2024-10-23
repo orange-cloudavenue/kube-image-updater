@@ -101,7 +101,9 @@ type (
 	ImageStatus struct {
 		// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 		// Important: Run "make" to regenerate code after modifying this file
-		Tag string `json:"tag"`
+		Tag    string              `json:"tag"`
+		Result ImageStatusLastSync `json:"result"`
+		Time   string              `json:"time"`
 	}
 )
 
@@ -111,6 +113,8 @@ type (
 // Image is the Schema for the images API
 // +kubebuilder:printcolumn:name="Image",type=string,JSONPath=`.spec.image`
 // +kubebuilder:printcolumn:name="Tag",type=string,JSONPath=`.status.tag`
+// +kubebuilder:printcolumn:name="Last-Result",type=string,JSONPath=`.status.result`
+// +kubebuilder:printcolumn:name="Last-Sync",type=date,JSONPath=`.status.time`
 type Image struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -135,6 +139,16 @@ func init() {
 // SetStatusTag sets the status tag of the image
 func (i *Image) SetStatusTag(tag string) {
 	i.Status.Tag = tag
+}
+
+// SetStatusExecution sets the status execution of the image
+func (i *Image) SetStatusResult(result ImageStatusLastSync) {
+	i.Status.Result = result
+}
+
+// SetStatusTime sets the status time of the image
+func (i *Image) SetStatusTime(time string) {
+	i.Status.Time = time
 }
 
 // GetImageWithTag returns the image name with the tag

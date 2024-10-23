@@ -24,7 +24,7 @@ var (
 	insideCluster bool = true // running inside k8s cluster
 
 	webhookNamespace   string = "nip.io"
-	webhookServiceName string = "192-168-1-23"
+	webhookServiceName string = "192-168-1-30"
 	webhookConfigName  string = "mutating-webhook-configuration"
 	webhookPathMutate  string = "/mutate"
 	webhookPort        string = ":8443"
