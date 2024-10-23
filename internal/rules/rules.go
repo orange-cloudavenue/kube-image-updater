@@ -26,6 +26,9 @@ const (
 	SemverMajor Name = "semver-major"
 	SemverMinor Name = "semver-minor"
 	SemverPatch Name = "semver-patch"
+	CalverMajor Name = "calver-major"
+	CalverMinor Name = "calver-minor"
+	CalverPatch Name = "calver-patch"
 	Regex       Name = "regex"
 	Always      Name = "always"
 )

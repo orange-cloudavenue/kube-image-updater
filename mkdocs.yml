@@ -18,8 +18,10 @@ nav:
     - Crontab: triggers/crontab.md
   - Rules:
     - Always: rules/always.md
-    - Semantic Versioning: rules/semver.md
     - Regex: rules/regex.md
+    - Versioning:
+      - Calendar: rules/calver.md
+      - Semantic: rules/semver.md
   - Actions:
     - Apply: actions/apply.md
     - Alerts:
