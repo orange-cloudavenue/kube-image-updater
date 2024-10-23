@@ -43,7 +43,7 @@ func main() {
 	log.WithField("version", version).Info("Starting kimup", version)
 
 	// kubernetes golang library provide flag "kubeconfig" to specify the path to the kubeconfig file
-	k, err := kubeclient.New(flag.Lookup("kubeconfig").Value.String())
+	k, err := kubeclient.New(flag.Lookup("kubeconfig").Value.String(), kubeclient.ComponentController)
 	if err != nil {
 		log.WithError(err).Panic("Error creating kubeclient")
 	}

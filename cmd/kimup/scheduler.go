@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/gookit/event"
 	log "github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/retry"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
@@ -73,6 +75,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				}
 				return err
 			}
+			k.Image().Event(&image, corev1.EventTypeNormal, "Image update triggered", "")
 
 			var auths kubeclient.K8sDockerRegistrySecretData
 
@@ -122,10 +125,13 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			if err != nil {
 				// Prometheus metrics - Increment the counter for the tags with error
 				metrics.Tags().RequestErrorTotal.Inc()
+				k.Image().Event(&image, corev1.EventTypeWarning, "Fetch image tags", fmt.Sprintf("Error fetching tags: %v", err))
+				log.WithError(err).Error("Error fetching tags")
 				return err
 			}
 
 			metrics.Tags().AvailableSum.WithLabelValues(image.Spec.Image).Observe(float64(len(tagsAvailable)))
+			k.Image().Event(&image, corev1.EventTypeNormal, "Fetch image tags", fmt.Sprintf("Found %d tags", len(tagsAvailable)))
 
 			log.Debugf("[RefreshImage] %d tags available for %s", len(tagsAvailable), image.Spec.Image)
 
@@ -158,8 +164,11 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 					metrics.Rules().EvaluatedErrorTotal.Inc()
 
 					log.Errorf("Error evaluating rule: %v", err)
+					k.Image().Event(&image, corev1.EventTypeWarning, "Evaluate rule", fmt.Sprintf("Error evaluating rule %s: %v", rule.Type, err))
 					continue
 				}
+
+				k.Image().Event(&image, corev1.EventTypeNormal, "Evaluate rule", fmt.Sprintf("Rule %s evaluated", rule.Type))
 
 				if match {
 					for _, action := range rule.Actions {
@@ -190,8 +199,10 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 							metrics.Actions().ExecutedErrorTotal.Inc()
 
 							log.Errorf("Error executing action(%s): %v", action.Type, err)
+							k.Image().Event(&image, corev1.EventTypeWarning, "Execute action", fmt.Sprintf("Error executing action %s: %v", action.Type, err))
 							continue
 						}
+						k.Image().Event(&image, corev1.EventTypeNormal, "Execute action", fmt.Sprintf("Action %s executed", action.Type))
 					}
 					log.Debugf("[RefreshImage] Rule %s evaluated: %v -> %s", rule.Type, tag, newTag)
 				}
