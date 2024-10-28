@@ -1,0 +1,3 @@
+```release-note:dependency
+deps: bumps k8s.io/api from 0.31.1 to 0.31.2
+```
