@@ -69,7 +69,6 @@ repo_name: orange-cloudavenue/kube-image-updater
 
 plugins:
   - search
-  - mkdocs-video
   - macros:
       on_undefined: silent
 
