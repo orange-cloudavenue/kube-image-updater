@@ -196,7 +196,7 @@ func (i *ImageObj) UpdateStatus(ctx context.Context, image v1alpha1.Image) error
 		return err
 	}
 
-	_, err = i.imageClient.Namespace(image.Namespace).UpdateStatus(ctx, u, v1.UpdateOptions{})
+	_, err = i.imageClient.Namespace(image.Namespace).UpdateStatus(ctx, u, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}

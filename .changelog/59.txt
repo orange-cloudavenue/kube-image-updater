@@ -1,0 +1,7 @@
+```release-note:breaking-change
+`kimup-admission-controller` - Remove component admission controller. This component is moved to `kimup-operator`, the `kimup-admission-controller` is no longer available.
+```
+
+```release-note:feature
+`kimup-operator` - Now the `kimup-operator` allow to set scope of the image-tag mutation. The scope can be set to `Namespaced` or `Pod`.
+```
