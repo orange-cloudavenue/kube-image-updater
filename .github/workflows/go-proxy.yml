@@ -1,14 +1,21 @@
-name: 'Force pkg.go.dev release sync'
+name: 'Force update pkg.go.dev/doc.crds.dev release sync'
 
 on:
-    release:
-        types: [published]
+  release:
+    types: [published]
 
 jobs:
-    build:
-        name: Renew documentation
-        runs-on:
-            group: Default
-        steps:
-            - name: Pull new module version
-              uses: andrewslotin/go-proxy-pull-action@master
+  pkg-go-dev:
+    name: Renew documentation
+    runs-on:
+        group: Default
+    steps:
+        - name: Pull new module version
+          uses: andrewslotin/go-proxy-pull-action@master
+  doc-crds-dev:
+    name: Renew documentation
+    runs-on:
+        group: Default
+    steps:
+        - name: update doc.crds.dev
+          uses: azrod/doc-crds-dev-update-action@master
