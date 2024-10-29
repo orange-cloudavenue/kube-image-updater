@@ -49,7 +49,17 @@ metadata:
     app.kubernetes.io/name: kube-image-updater
   name: kimup
 spec:
-  controller:
-    name: demo
-    logLevel: info
+  name: demo
+  logLevel: info
+```
+
+```bash
+kubectl apply -f kimup.yaml
+```
+
+```bash
+kubectl get kimup
+
+NAME    STATE
+kimup   ready
 ```
