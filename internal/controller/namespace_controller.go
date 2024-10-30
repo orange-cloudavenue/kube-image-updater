@@ -67,7 +67,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	if err := r.Client.Get(ctx, req.NamespacedName, &ns); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			xlog.WithError(err).Error("could not get the image object")
+			xlog.WithError(err).Error("could not get the namespace object")
 			foundInMutatorConfig = true // Force rebuilding the mutating configuration
 		} else {
 			return ctrl.Result{}, err
