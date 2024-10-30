@@ -180,6 +180,10 @@ spec:
                       type: string
                     type:
                       enum:
+                      - calver-major
+                      - calver-minor
+                      - calver-patch
+                      - calver-prerelease
                       - semver-major
                       - semver-minor
                       - semver-patch
