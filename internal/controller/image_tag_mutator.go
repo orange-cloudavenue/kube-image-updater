@@ -58,7 +58,7 @@ func (i *ImageTagMutator) Handle(ctx context.Context, req admission.Request) adm
 		image, err := i.KubeAPIClient.Image().Find(ctx, pod.Namespace, imageP.GetImageWithoutTag())
 		if err != nil {
 			// increment the total number of errors
-			metrics.AdmissionController().PatchErrorTotal.Inc()
+			metrics.Mutator().PatchErrorTotal.Inc()
 
 			log.Error(err, "Failed to find kind Image")
 			continue

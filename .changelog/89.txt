@@ -1,0 +1,11 @@
+```release-note:enhancement
+`webserver` - Now all webserver use same `log` format.
+```
+
+```release-note:enhancement
+`operator` - Now operator expose `metrics` for monitoring.
+```
+
+```release-note:enhancement
+`operator` - Now operator expose /healthz for health check and /readyz for readiness check.
+```

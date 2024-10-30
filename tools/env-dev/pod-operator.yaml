@@ -11,17 +11,33 @@ spec:
   containers:
     - image: kurun://cmd/operator/main.go
       name: operator
+      args:
+        - "/main"
+        - "--metrics"
+        - "--healthz"
+        - "--leader-elect"
       ports:
-        - containerPort: 9443
+        - containerPort: 8443
           name: webhook-server
           protocol: TCP
-        - containerPort: 8080
+        - containerPort: 9080
           name: metrics
+          protocol: TCP
+        - containerPort: 9081
+          name: healthz
           protocol: TCP
       volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: webhook-cert
           readOnly: true
+      readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 9081
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 9081
   serviceAccount: kimup
   serviceAccountName: kimup
   volumes:

@@ -1,14 +1,23 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mutator
+  name: kimup-operator
   namespace: kimup-operator
   labels:
     app.kubernetes.io/name: kube-image-updater
 spec:
   ports:
-  - port: 443
-    targetPort: 9443
+  - name: operator
+    port: 443
+    targetPort: webhook-server
+  - name: metrics
+    port: 9080
+    protocol: TCP
+    targetPort: metrics
+  - name: healthz
+    port: 9081
+    protocol: TCP
+    targetPort: healthz
   selector:
     app.kubernetes.io/name: kube-image-updater
     app.kubernetes.io/instance: kimup-operator

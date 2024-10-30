@@ -29,12 +29,19 @@ spec:
         - name: operator
           image: "ghcr.io/orange-cloudavenue/kimup-operator:latest"
           imagePullPolicy: IfNotPresent
+          args:
+            - --healthz
+            - --metrics
+            - --leader-elect
           ports:
             - containerPort: 8443
               name: webhook-server
               protocol: TCP
-            - containerPort: 8080
+            - containerPort: 9080
               name: metrics
+              protocol: TCP
+            - containerPort: 9081
+              name: healthz
               protocol: TCP
           securityContext:
             allowPrivilegeEscalation: false
@@ -52,16 +59,14 @@ spec:
             requests:
               cpu: 10m
               memory: 64Mi
-          # readinessProbe:
-          #     httpGet:
-          #       path: /readyz
-          #       port: 8081
-          # livenessProbe:
-          #   httpGet:
-          #     path: /healthz
-          #     port: 8081
-          # resources:
-
+          readinessProbe:
+              httpGet:
+                path: /readyz
+                port: 9081
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9081
       volumes:
       - name: webhook-cert
         secret:

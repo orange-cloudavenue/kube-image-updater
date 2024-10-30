@@ -19,11 +19,9 @@ package main
 import (
 	"context"
 	"flag"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/bombsimon/logrusr/v4"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,6 +29,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	controllermetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -39,6 +38,7 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/httpserver"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -52,6 +52,12 @@ var (
 )
 
 func init() {
+	// Set the controllermetrics prometheus registry into the metrics package
+	metrics.PFactory = controllermetrics.Registry
+
+	// Initialize the metrics
+	metrics.Mutator()
+
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(kimupv1alpha1.AddToScheme(scheme))
@@ -74,14 +80,25 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
-			// TODO pass metrics to common metrics server
-			BindAddress: "0", // disable metrics service
+			BindAddress: "0", // metrics are served by common metrics server
 		},
-		// TODO reenable and use comman healthz server to check the health of the application
-		HealthProbeBindAddress: "0", // disable health probe service
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "71be4586.cloudavenue.io",
-		WebhookServer:          webhook,
+		HealthProbeBindAddress: func() string {
+			if flag.Lookup(models.MetricsFlagName).Value.String() == "true" {
+				return httpserver.HealthzPort
+			}
+
+			return "0" // disable healthz server
+		}(),
+		LivenessEndpointName: func() string {
+			if flag.Lookup(models.MetricsFlagName).Value.String() == "true" {
+				return httpserver.HealthzPath
+			}
+
+			return "" // disable healthz server
+		}(),
+		LeaderElection:   enableLeaderElection,
+		LeaderElectionID: "71be4586.kimup.cloudavenue.io",
+		WebhookServer:    webhook,
 	})
 	if err != nil {
 		log.WithError(err).Error("unable to start manager")
@@ -133,15 +150,7 @@ func main() {
 	defer cancel()
 
 	// * Config the metrics and healthz server
-	a, waitHTTP := httpserver.Init(ctx, httpserver.WithCustomHandlerForHealth(
-		func() (bool, error) {
-			// TODO improve
-			_, err := net.DialTimeout("tcp", models.HealthzDefaultAddr, 5*time.Second)
-			if err != nil {
-				return false, err
-			}
-			return true, nil
-		}))
+	a, waitHTTP := httpserver.Init(ctx, httpserver.DisableHealth())
 
 	if err := a.Run(); err != nil {
 		log.WithError(err).Error("Failed to start HTTP servers")

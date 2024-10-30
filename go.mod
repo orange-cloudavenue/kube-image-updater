@@ -11,6 +11,7 @@ replace github.com/distribution/reference => github.com/distribution/reference v
 require (
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/bombsimon/logrusr/v4 v4.1.0
+	github.com/chi-middleware/logrus-logger v0.3.0
 	github.com/containers/image/v5 v5.32.2
 	github.com/containrrr/shoutrrr v0.8.0
 	github.com/crazy-max/diun/v4 v4.28.0
