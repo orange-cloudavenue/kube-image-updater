@@ -35,7 +35,7 @@ func main() {
 
 	_, err = k.Mutator().CreateOrUpdateMutatingConfiguration(
 		context.Background(),
-		models.MutatorMutatingWebhookConfigurationName,
+		models.MutatorWebhookConfigurationName,
 		admissionregistrationv1.ServiceReference{
 			Name:      "mutator",
 			Namespace: "kimup-operator",

@@ -144,6 +144,16 @@ func main() {
 		c <- syscall.SIGINT
 	}
 
+	if err = (&controller.NamespaceReconciler{
+		Client:        mgr.GetClient(),
+		KubeAPIClient: kubeAPIClient,
+		Scheme:        mgr.GetScheme(),
+		Recorder:      mgr.GetEventRecorderFor("kimup-operator"),
+	}).SetupWithManager(mgr); err != nil {
+		log.WithError(err).Error(err, "unable to create controller", "controller", "Namespace")
+		c <- syscall.SIGINT
+	}
+
 	// +kubebuilder:scaffold:builder
 
 	ctx, cancel := context.WithCancel(context.Background())
