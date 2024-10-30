@@ -1,3 +1,4 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -10,7 +11,6 @@ rules:
   verbs:
   - create
   - patch
-
 - apiGroups:
   - ""
   resources:
@@ -24,7 +24,6 @@ rules:
   - patch
   - update
   - watch
-
 - apiGroups:
   - apps
   resources:
@@ -38,20 +37,6 @@ rules:
   - patch
   - update
   - watch
-
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - mutatingwebhookconfigurations
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-
 - apiGroups:
   - kimup.cloudavenue.io
   resources:
@@ -66,7 +51,6 @@ rules:
   - patch
   - update
   - watch
-
 - apiGroups:
   - kimup.cloudavenue.io
   resources:
@@ -75,7 +59,6 @@ rules:
   - kimups/finalizers
   verbs:
   - update
-
 - apiGroups:
   - kimup.cloudavenue.io
   resources:
