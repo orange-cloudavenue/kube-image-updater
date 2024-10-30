@@ -21,7 +21,10 @@ spec:
         app.kubernetes.io/instance: kimup-operator
         app.kubernetes.io/component: controller
     spec:
+      terminationGracePeriodSeconds: 10
       serviceAccountName: kimup
+      securityContext:
+        runAsNonRoot: true
       containers:
         - name: operator
           image: "ghcr.io/orange-cloudavenue/kimup-operator:latest"
@@ -33,10 +36,22 @@ spec:
             - containerPort: 8080
               name: metrics
               protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - "ALL"
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: webhook-cert
               readOnly: true
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
           # readinessProbe:
           #     httpGet:
           #       path: /readyz
