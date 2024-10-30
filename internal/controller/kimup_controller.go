@@ -41,7 +41,7 @@ type KimupReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
-func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:gocyclo
+func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	xlog := log.WithContext(ctx).WithFields(logrus.Fields{
 		"namespace": req.Namespace,
 		"name":      req.Name,
@@ -61,22 +61,11 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		resourcesToUpdate = make([]Object, 0)
 	)
 
-	if kim.Spec.Controller != nil {
-		switch {
-		case kim.Status.Controller.State == "":
-			resourcesToCreate = append(resourcesToCreate, GetKimupControllerResources(ctx, kim)...)
-		default:
-			resourcesToUpdate = append(resourcesToUpdate, GetKimupControllerResources(ctx, kim)...)
-		}
-	}
-
-	if kim.Spec.AdmissionController != nil {
-		switch {
-		case kim.Status.AdmissionController.State == "":
-			resourcesToCreate = append(resourcesToCreate, GetKimupAdmissionResources(ctx, kim)...)
-		default:
-			resourcesToUpdate = append(resourcesToUpdate, GetKimupAdmissionResources(ctx, kim)...)
-		}
+	switch {
+	case kim.Status.State == "":
+		resourcesToCreate = append(resourcesToCreate, GetKimupControllerResources(ctx, kim)...)
+	default:
+		resourcesToUpdate = append(resourcesToUpdate, GetKimupControllerResources(ctx, kim)...)
 	}
 
 	for _, resource := range resourcesToCreate {
@@ -125,12 +114,7 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				continue
 			}
 
-			switch deployment.Name {
-			case KimupControllerName:
-				kim.Status.Controller.State = StateResourcesCreated
-			case KimupAdmissionControllerName:
-				kim.Status.AdmissionController.State = StateResourcesCreated
-			}
+			kim.Status.State = StateResourcesCreated
 
 			if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
 				xlog.WithFields(logrus.Fields{
@@ -141,12 +125,7 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				rescheduleAfter = true
 				continue
 			} else {
-				switch deployment.Name {
-				case KimupControllerName:
-					kim.Status.Controller.State = StateReady
-				case KimupAdmissionControllerName:
-					kim.Status.AdmissionController.State = StateReady
-				}
+				kim.Status.State = StateReady
 				xlog.WithFields(logrus.Fields{
 					"namespace": deployment.Namespace,
 					"name":      deployment.Name,
@@ -168,12 +147,7 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				continue
 			}
 
-			switch daemonset.Name {
-			case KimupControllerName:
-				kim.Status.Controller.State = StateResourcesCreated
-			case KimupAdmissionControllerName:
-				kim.Status.AdmissionController.State = StateResourcesCreated
-			}
+			kim.Status.State = StateResourcesCreated
 
 			if daemonset.Status.DesiredNumberScheduled != daemonset.Status.NumberReady {
 				xlog.WithFields(logrus.Fields{
@@ -184,12 +158,7 @@ func (r *KimupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				rescheduleAfter = true
 				continue
 			} else {
-				switch daemonset.Name {
-				case KimupControllerName:
-					kim.Status.Controller.State = StateReady
-				case KimupAdmissionControllerName:
-					kim.Status.AdmissionController.State = StateReady
-				}
+				kim.Status.State = StateReady
 				xlog.WithFields(logrus.Fields{
 					"namespace": daemonset.Namespace,
 					"name":      daemonset.Name,
