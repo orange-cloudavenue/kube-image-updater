@@ -1,6 +1,7 @@
 ## 0.1.0 (Unreleased)
 ### :rotating_light: **Breaking Changes**
 
+* `crd kimup` - Refactor the `kimup` CRD to remove the `admissioncontroller` field. (GH-85)
 * `kimup-admission-controller` - Remove component admission controller. This component is moved to `kimup-operator`, the `kimup-admission-controller` is no longer available. (GH-59)
 
 ### :rocket: **New Features**
