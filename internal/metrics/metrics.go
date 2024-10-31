@@ -78,7 +78,7 @@ func InitAll() {
 	Tags()
 	Rules()
 	Registry()
-	AdmissionController()
+	Mutator()
 }
 
 // GetHelp returns the help text of the metric

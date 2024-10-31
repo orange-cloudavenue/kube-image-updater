@@ -11,11 +11,12 @@ import (
 	"sync"
 	"time"
 
+	logger "github.com/chi-middleware/logrus-logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
 
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/metrics"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
@@ -59,8 +60,8 @@ type (
 )
 
 var (
-	healthzPort string = ""
-	healthzPath string = ""
+	HealthzPort string = "" // expose var to be able to operator
+	HealthzPath string = "" // expose var to be able to operator
 	metricsPort string = ""
 	metricsPath string = ""
 
@@ -78,8 +79,8 @@ var (
 func init() {
 	// * Healthz
 	flag.Bool(models.HealthzFlagName, false, "Enable the healthz server.")
-	flag.StringVar(&healthzPort, models.HealthzPortFlagName, models.HealthzDefaultAddr, "Healthz server port.")
-	flag.StringVar(&healthzPath, models.HealthzPathFlagName, models.HealthzDefaultPath, "Healthz server path.")
+	flag.StringVar(&HealthzPort, models.HealthzPortFlagName, models.HealthzDefaultAddr, "Healthz server port.")
+	flag.StringVar(&HealthzPath, models.HealthzPathFlagName, models.HealthzDefaultPath, "Healthz server path.")
 
 	// * Metrics
 	flag.Bool(models.MetricsFlagName, false, "Enable the metrics server.")
@@ -134,15 +135,14 @@ func DisableMetrics() OptionServer {
 
 // Function to create a new server for health
 func (a *app) createHealth() *server {
-	s := a.new(WithAddr(healthzPort))
-	// s.Config.Get(DefaultPathHealth, health.DefaultHandler().ServeHTTP))
+	s := a.new(WithAddr(HealthzPort))
 	return s
 }
 
 // Function to create a new server for metrics
 func (a *app) createMetrics() *server {
 	s := a.new(WithAddr(metricsPort))
-	s.Config.Get(metricsPath, promhttp.Handler().ServeHTTP)
+	s.Config.Get(metricsPath, metrics.Handler().ServeHTTP)
 	return s
 }
 
@@ -150,8 +150,8 @@ func (a *app) createMetrics() *server {
 func (a *app) new(opts ...Option) *server {
 	// create a new router
 	r := chi.NewRouter()
+	r.Use(logger.Logger("router", log.GetLogger()))
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Logger)
 
 	// create a new server with default parameters
 	s := &server{
@@ -279,7 +279,7 @@ func WithCustomHandlerForHealth(req HealthzFunc) OptionServer {
 			return
 		}
 
-		a.list["health"].Config.Get(healthzPath, func(w http.ResponseWriter, r *http.Request) {
+		a.list["health"].Config.Get(HealthzPath, func(w http.ResponseWriter, r *http.Request) {
 			ok, err := req()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

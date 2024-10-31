@@ -2,12 +2,14 @@ package metrics
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/iancoleman/strcase"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type (
@@ -18,7 +20,21 @@ type (
 	HistogramVec struct {
 		*prometheus.HistogramVec
 	}
+
+	PromFactory interface {
+		prometheus.Registerer
+		prometheus.Gatherer
+	}
 )
+
+var PFactory PromFactory = prometheus.NewRegistry()
+
+func Handler() http.Handler {
+	return promhttp.HandlerFor(PFactory, promhttp.HandlerOpts{
+		Registry:      PFactory,
+		ErrorHandling: promhttp.HTTPErrorOnError,
+	})
+}
 
 func (h HistogramVec) NewTimer(labelsValues ...string) *prometheus.Timer {
 	return prometheus.NewTimer(h.WithLabelValues(labelsValues...))
@@ -116,7 +132,7 @@ func newGauge(name, help string) prometheus.Gauge {
 			Help: help,
 		},
 		// Create the gauge prometheus
-		Gauge: promauto.NewGauge(prometheus.GaugeOpts{
+		Gauge: promauto.With(PFactory).NewGauge(prometheus.GaugeOpts{
 			Name: name,
 			Help: help,
 		}),
@@ -145,7 +161,7 @@ func newGaugeWithVec(name, help string, labels []string) *prometheus.GaugeVec {
 			Help: help,
 		},
 		// Create the gauge prometheus
-		GaugeVec: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		GaugeVec: promauto.With(PFactory).NewGaugeVec(prometheus.GaugeOpts{
 			Name: name,
 			Help: help,
 		}, labels),
@@ -175,7 +191,7 @@ func newCounter(name, help string) prometheus.Counter {
 			Help: help,
 		},
 		// Create the counter prometheus
-		Counter: promauto.NewCounter(prometheus.CounterOpts{
+		Counter: promauto.With(PFactory).NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		}),
@@ -204,7 +220,7 @@ func newCounterWithVec(name, help string, labels []string) *prometheus.CounterVe
 			Help: help,
 		},
 		// Create the counter prometheus
-		CounterVec: prometheus.NewCounterVec(prometheus.CounterOpts{
+		CounterVec: promauto.With(PFactory).NewCounterVec(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		}, labels),
@@ -234,7 +250,7 @@ func newSummary(name, help string) prometheus.Summary {
 			Help: help,
 		},
 		// Create the summary prometheus
-		Summary: promauto.NewSummary(prometheus.SummaryOpts{
+		Summary: promauto.With(PFactory).NewSummary(prometheus.SummaryOpts{
 			Name: name,
 			Help: help,
 		}),
@@ -263,7 +279,7 @@ func newSummaryWithVec(name, help string, labels []string) *prometheus.SummaryVe
 			Help: help,
 		},
 		// Create the summary prometheus
-		SummaryVec: prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		SummaryVec: promauto.With(PFactory).NewSummaryVec(prometheus.SummaryOpts{
 			Name: name,
 			Help: help,
 		}, labels),
@@ -294,7 +310,7 @@ func newHistogram(name, help string) Histogram {
 		},
 		// Create the histogram prometheus
 		Histogram: Histogram{
-			promauto.NewHistogram(prometheus.HistogramOpts{
+			promauto.With(PFactory).NewHistogram(prometheus.HistogramOpts{
 				Name: name,
 				Help: help,
 				// Bucket configuration for microsecond durations
@@ -326,7 +342,7 @@ func newHistogramVec(name, help string, labels []string) HistogramVec {
 		},
 		// Create the metricBase
 		HistogramVec: HistogramVec{
-			prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			promauto.With(PFactory).NewHistogramVec(prometheus.HistogramOpts{
 				Name: name,
 				Help: help,
 				// Bucket configuration for microsecond durations
