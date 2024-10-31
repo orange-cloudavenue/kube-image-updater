@@ -7,6 +7,7 @@
 ### :rocket: **New Features**
 
 * `chore` - Now the mutating webhook configuration used for mutate image tag on pod creation is created by the operator itself. This is done to avoid the need for the user to create the mutating webhook configuration manually. The operator will also update the mutating webhook configuration if the user changes the configuration (annotations) in the namespace. (GH-87)
+* `feat` - Add calver Rule Semantic. (GH-58)
 * `kimup-operator` - Now the `kimup-operator` allow to set scope of the image-tag mutation. The scope can be set to `Namespaced` or `Pod`. (GH-59)
 
 ### :tada: **Improvements**
