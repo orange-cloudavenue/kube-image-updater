@@ -23,6 +23,7 @@ require (
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/reugn/go-quartz v0.13.0
+	github.com/shipengqi/vc v0.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/thanhpk/randstr v1.0.6

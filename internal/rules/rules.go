@@ -23,11 +23,15 @@ type (
 var rules = make(Rules)
 
 const (
-	SemverMajor Name = "semver-major"
-	SemverMinor Name = "semver-minor"
-	SemverPatch Name = "semver-patch"
-	Regex       Name = "regex"
-	Always      Name = "always"
+	SemverMajor      Name = "semver-major"
+	SemverMinor      Name = "semver-minor"
+	SemverPatch      Name = "semver-patch"
+	CalverMajor      Name = "calver-major"
+	CalverMinor      Name = "calver-minor"
+	CalverPatch      Name = "calver-patch"
+	CalverPrerelease Name = "calver-prerelease"
+	Regex            Name = "regex"
+	Always           Name = "always"
 )
 
 func register(name Name, rule RuleInterface) {

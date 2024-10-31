@@ -76,7 +76,7 @@ type (
 		Name string `json:"name"`
 
 		// +kubebuilder:validation:Required
-		// +kubebuilder:validation:Enum=semver-major;semver-minor;semver-patch;regex;always
+		// +kubebuilder:validation:Enum=calver-major;calver-minor;calver-patch;calver-prerelease;semver-major;semver-minor;semver-patch;regex;always
 		Type rules.Name `json:"type"`
 
 		// +kubebuilder:validation:Optional
