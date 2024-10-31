@@ -7,7 +7,7 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
-var _ models.ActionInterface = &apply{}
+var _ ActionInterface = &apply{}
 
 type (
 	// apply is an action that applies the new tag to the image

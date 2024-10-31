@@ -1,0 +1,3 @@
+```release-note:feature
+`chore` - Now the mutating webhook configuration used for mutate image tag on pod creation is created by the operator itself. This is done to avoid the need for the user to create the mutating webhook configuration manually. The operator will also update the mutating webhook configuration if the user changes the configuration (annotations) in the namespace.
+```

@@ -49,6 +49,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - kimup.cloudavenue.io
   resources:
   - alertconfigs

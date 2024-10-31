@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	_ models.ActionInterface                     = &alertDiscord{}
+	_ ActionInterface                            = &alertDiscord{}
 	_ models.AlertInterface[models.AlertDiscord] = &alertDiscord{}
 )
 

@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/orange-cloudavenue/kube-image-updater/internal/annotations"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/log"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
@@ -33,6 +34,16 @@ func (a *MutatorObj) GetMutatingConfiguration(ctx context.Context, name string) 
 }
 
 func (a *MutatorObj) CreateOrUpdateMutatingConfiguration(ctx context.Context, name string, svc admissionregistrationv1.ServiceReference, policy admissionregistrationv1.FailurePolicyType) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+	// Get kimup-operator deployment to get UID and inject owner reference to the mutating configuration
+	// This is needed to ensure that the mutating configuration is deleted when the operator is deleted
+	// This is a workaround for the lack of garbage collection in the admissionregistration.k8s.io/v1 API
+	operatorDeployment, err := a.AppsV1().Deployments("kimup-operator").List(ctx, metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/instance=kimup-operator",
+	})
+	if err != nil {
+		log.WithError(err).Warn("could not get the operator deployment")
+	}
+
 	// Get All Namespaces with the "enabled" label
 	nsList, err := a.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -53,6 +64,17 @@ func (a *MutatorObj) CreateOrUpdateMutatingConfiguration(ctx context.Context, na
 		}
 	}
 
+	if operatorDeployment != nil && len(operatorDeployment.Items) > 0 && mwc.OwnerReferences == nil {
+		mwc.OwnerReferences = []metav1.OwnerReference{
+			{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       operatorDeployment.Items[0].Name,
+				UID:        operatorDeployment.Items[0].UID,
+			},
+		}
+	}
+
 	// reset webhooks settings
 	mwc.Webhooks = []admissionregistrationv1.MutatingWebhook{}
 
@@ -62,7 +84,7 @@ func (a *MutatorObj) CreateOrUpdateMutatingConfiguration(ctx context.Context, na
 			continue
 		}
 
-		mwc.Webhooks = append(mwc.Webhooks, a.buildMutatingWebhookConfiguration(svc, policy, &namespaceMatchConditionBuilder{namespace: ns.Name}))
+		mwc.Webhooks = append(mwc.Webhooks, a.buildMutatingWebhookConfiguration(svc, policy, &namespaceMatchConditionBuilder{Namespace: ns.Name}))
 	}
 
 	// Add the default matchCondition (All pods with annotation enabled == true)
@@ -77,7 +99,7 @@ func (a *MutatorObj) CreateOrUpdateMutatingConfiguration(ctx context.Context, na
 
 func (a *MutatorObj) buildMutatingWebhookConfiguration(svc admissionregistrationv1.ServiceReference, policy admissionregistrationv1.FailurePolicyType, matchConditionBuilder matchConditionBuilderInterface) admissionregistrationv1.MutatingWebhook {
 	return admissionregistrationv1.MutatingWebhook{
-		Name:                    matchConditionBuilder.getName() + ".image-tag.kimup.cloudavenue.io",
+		Name:                    matchConditionBuilder.GetName(),
 		AdmissionReviewVersions: []string{"v1", "v1beta1"},
 		SideEffects:             utils.ToPTR(admissionregistrationv1.SideEffectClassNone),
 		ClientConfig: admissionregistrationv1.WebhookClientConfig{

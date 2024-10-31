@@ -1,13 +1,24 @@
 package actions
 
 import (
+	"context"
+
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/kubeclient"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 )
 
 type (
-	_actions map[models.ActionName]models.ActionInterface
+	ActionInterface interface {
+		Init(kubeClient kubeclient.Interface, tags models.Tags, image *v1alpha1.Image, data v1alpha1.ValueOrValueFrom)
+		Execute(context.Context) error
+		GetName() models.ActionName
+		GetActualTag() string
+		GetNewTag() string
+		GetAvailableTags() []string
+	}
+
+	_actions map[models.ActionName]ActionInterface
 
 	action struct {
 		tags  models.Tags
@@ -25,7 +36,7 @@ const (
 	AlertEmail   models.ActionName = "alert-email"
 )
 
-func register(name models.ActionName, action models.ActionInterface) {
+func register(name models.ActionName, action ActionInterface) {
 	actions[name] = action
 }
 
@@ -56,7 +67,7 @@ func ParseActionName(name string) (models.ActionName, error) {
 // Returns:
 //   - ActionInterface: The action associated with the given name.
 //   - error: An error indicating if the action was not found (ErrActionNotFound).
-func GetAction(name models.ActionName) (models.ActionInterface, error) {
+func GetAction(name models.ActionName) (ActionInterface, error) {
 	if _, ok := actions[name]; !ok {
 		return nil, ErrActionNotFound
 	}
@@ -74,7 +85,7 @@ func GetAction(name models.ActionName) (models.ActionInterface, error) {
 // Returns:
 //   - An ActionInterface corresponding to the parsed action name, or nil if not found.
 //   - An error if the action name could not be parsed.
-func GetActionWithUntypedName(name string) (models.ActionInterface, error) {
+func GetActionWithUntypedName(name string) (ActionInterface, error) {
 	n, err := ParseActionName(name)
 	if err != nil {
 		return nil, err

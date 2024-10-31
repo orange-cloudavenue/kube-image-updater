@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	_ models.ActionInterface                   = &alertEmail{}
+	_ ActionInterface                          = &alertEmail{}
 	_ models.AlertInterface[models.AlertEmail] = &alertEmail{}
 )
 
