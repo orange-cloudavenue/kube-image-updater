@@ -9,7 +9,6 @@ toolchain go1.23.1
 replace github.com/distribution/reference => github.com/distribution/reference v0.5.0
 
 require (
-	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/bombsimon/logrusr/v4 v4.1.0
 	github.com/chi-middleware/logrus-logger v0.3.0
 	github.com/containers/image/v5 v5.32.2
@@ -23,6 +22,7 @@ require (
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/reugn/go-quartz v0.13.0
+	github.com/shipengqi/vc v0.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/thanhpk/randstr v1.0.6
