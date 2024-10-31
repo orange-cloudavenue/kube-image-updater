@@ -8,6 +8,12 @@
 
 * `kimup-operator` - Now the `kimup-operator` allow to set scope of the image-tag mutation. The scope can be set to `Namespaced` or `Pod`. (GH-59)
 
+### :tada: **Improvements**
+
+* `operator` - Now operator expose /healthz for health check and /readyz for readiness check. (GH-89)
+* `operator` - Now operator expose `metrics` for monitoring. (GH-89)
+* `webserver` - Now all webserver use same `log` format. (GH-89)
+
 ### :dependabot: **Dependencies**
 
 * deps: bumps crazy-max/ghaction-setup-docker from 3.3.0 to 3.4.0 (GH-83)
