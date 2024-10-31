@@ -9,7 +9,6 @@ toolchain go1.23.1
 replace github.com/distribution/reference => github.com/distribution/reference v0.5.0
 
 require (
-	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/bombsimon/logrusr/v4 v4.1.0
 	github.com/chi-middleware/logrus-logger v0.3.0
 	github.com/containers/image/v5 v5.32.2
