@@ -1,4 +1,5 @@
-## 0.1.0 (Unreleased)
+## 0.2.0 (Unreleased)
+## 0.1.0 (November  3, 2024)
 ### :rotating_light: **Breaking Changes**
 
 * `crd kimup` - Refactor the `kimup` CRD to remove the `admissioncontroller` field. (GH-85)
