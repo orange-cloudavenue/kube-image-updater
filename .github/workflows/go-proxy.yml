@@ -1,8 +1,9 @@
 name: 'Force update pkg.go.dev/doc.crds.dev release sync'
 
 on:
+  workflow_dispatch:
   release:
-    types: [published]
+    types: [created]
 
 jobs:
   pkg-go-dev:
