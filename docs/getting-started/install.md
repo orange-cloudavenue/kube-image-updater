@@ -9,14 +9,15 @@ Kimup Operator is a Kubernetes operator used to manage images and their lifecycl
 
 Resources managed by Kimup Operator are:
 
-* [Image](crd/image.md)
-* [AlertConfig](crd/alertconfig.md)
-* [Kimup](crd/kimup.md)
+* [Image](../crd/image.md)
+* [AlertConfig](../crd/alertconfig.md)
+* [Kimup](../crd/kimup.md)
 
 ## Prerequisites
 
-* A Kubernetes cluster with a version >= 1.19
+* A Kubernetes cluster with a version >= 1.28
 * `kubectl` with kustomize installed and configured to connect to your cluster
+* `cert-manager` installed in your cluster (See [cert-manager documentation](https://cert-manager.io/docs/installation/kubernetes/))
 
 ## Installation
 
@@ -39,7 +40,7 @@ By default, Kimup Operator is installed in the `kimup-operator` namespace.
 
 ### Deploy `kimup-controller`
 
-For deploying `kimup-controller`, create a `Kimup` resource:
+For deploying `kimup-controller`, create a `Kimup` resource in the `kimup-operator` namespace:
 
 ```yaml
 apiVersion: kimup.cloudavenue.io/v1alpha1
@@ -48,6 +49,7 @@ metadata:
   labels:
     app.kubernetes.io/name: kube-image-updater
   name: kimup
+  namespace: kimup-operator
 spec:
   name: demo
   logLevel: info
