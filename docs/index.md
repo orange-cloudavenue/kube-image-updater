@@ -29,7 +29,7 @@ metadata:
   labels:
     app.kubernetes.io/name: kube-image-updater
     app.kubernetes.io/managed-by: kustomize
-  name: demo
+  name: demos
   namespace: default
 spec:
   image: {{dockerImages.whoami}}
