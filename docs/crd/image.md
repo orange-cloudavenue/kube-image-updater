@@ -79,14 +79,14 @@ The following status can be set on an image:
 
 | Last-Sync state | Description |
 | --------------- | ----------- |
-| `ImageStatusLastSyncErrorAction` | Status of the image when it is last sync error action. |
-| `ImageStatusLastSyncErrorGetImage` | Status of the image when it is last sync get error. |
-| `ImageStatusLastSyncErrorGetRule` | Status of the image when it is last sync error get rule. |
-| `ImageStatusLastSyncErrorPullSecrets` | Status of the image when it is last sync error secrets. |
-| `ImageStatusLastSyncErrorRegistry` | Status of the image when it is last sync error registry. |
-| `ImageStatusLastSyncErrorTags` | Status of the image when it is last sync error tags. |
-| `ImageStatusLastSyncError` | Status of the image when an error occurred. |
-| `ImageStatusLastSyncScheduled` | Status of the image when it is last sync is scheduled. |
-| `ImageStatusLastSyncSuccess` | Status of the image when it is last sync success. |
+| &#34;ActionError&#34; | Status of the image when it is last sync error action. |
+| &#34;Error&#34; | Status of the image when an error occurred. |
+| &#34;GetImageError&#34; | Status of the image when it is last sync get error. |
+| &#34;GetRuleError&#34; | Status of the image when it is last sync error get rule. |
+| &#34;PullSecretsError&#34; | Status of the image when it is last sync error secrets. |
+| &#34;RegistryError&#34; | Status of the image when it is last sync error registry. |
+| &#34;Scheduled&#34; | Status of the image when it is last sync is scheduled. |
+| &#34;Success&#34; | Status of the image when it is last sync success. |
+| &#34;TagsError&#34; | Status of the image when it is last sync error tags. |
 
 

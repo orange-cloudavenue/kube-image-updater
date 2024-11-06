@@ -1,0 +1,7 @@
+```release-note:bug
+`image` - Now the image is displayed correctly the `last-result`.
+```
+
+```release-note:enhancement
+`image/status` - Fix the documentation of the `image/status.
+```

@@ -65,16 +65,20 @@ func refreshIfRequired(an annotations.Annotation, image v1alpha1.Image) {
 				"namespace": image.Namespace,
 				"name":      image.Name,
 			}).Info("Annotation trigger refresh")
-		_, err := triggers.Trigger(triggers.RefreshImage, image.Namespace, image.Name)
-		if err != nil {
-			log.
-				WithFields(logrus.Fields{
-					"namespace": image.Namespace,
-					"name":      image.Name,
-				}).
-				Error("Error triggering event")
-		}
+		refresh(image)
 		an.Remove(annotations.KeyAction)
+	}
+}
+
+func refresh(image v1alpha1.Image) {
+	_, err := triggers.Trigger(triggers.RefreshImage, image.Namespace, image.Name)
+	if err != nil {
+		log.
+			WithFields(logrus.Fields{
+				"namespace": image.Namespace,
+				"name":      image.Name,
+			}).
+			Error("Error triggering event")
 	}
 }
 
