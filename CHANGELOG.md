@@ -6,7 +6,9 @@
 
 ### :bug: **Bug Fixes**
 
+* `healthz` - Fix the issue where the port specified in the `healthz-port` configuration was not being used. (GH-100)
 * `kimup-operator` - Now webhook start with default port 9443. (GH-105)
+* `metrics` - Fix the issue where the port specified in the `metrics-port` configuration was not being used. (GH-100)
 
 ## 0.1.0 (November  3, 2024)
 ### :rotating_light: **Breaking Changes**
