@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,8 +55,7 @@ type NamespaceReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	xlog := log.WithContext(ctx).WithFields(logrus.Fields{
-		"namespace": req.Namespace,
-		"name":      req.Name,
+		"name": req.Name,
 	})
 
 	xlog.Info("Reconciling Namespace")
@@ -75,7 +75,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// get mutator configuration
-	mutator, _ := r.KubeAPIClient.Mutator().GetMutatingConfiguration(ctx, models.MutatorWebhookConfigurationName)
+	mutator, err := r.KubeAPIClient.Mutator().GetMutatingConfiguration(ctx, models.MutatorWebhookConfigurationName)
 	// ignore error, we will create it if it does not exist
 	if mutator != nil {
 		wName := kubeclient.NamespaceMatchConditionBuilder{}.New(req.Name).GetName()
@@ -89,16 +89,15 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	an := annotations.New(ctx, &ns)
 
-	if an.Enabled().Get() || foundInMutatorConfig {
+	if an.Enabled().Get() || foundInMutatorConfig || errors.IsNotFound(err) {
 		_, err := r.KubeAPIClient.Mutator().CreateOrUpdateMutatingConfiguration(
 			ctx,
 			models.MutatorWebhookConfigurationName,
 			admissionregistrationv1.ServiceReference{
-				Name:      "mutator",
+				Name:      "kimup-operator",
 				Namespace: "kimup-operator",
 				Path:      &models.MutatorWebhookPathMutateImageTag,
 			},
-			admissionregistrationv1.Fail,
 		)
 		if err != nil {
 			xlog.WithError(err).Error("could not create or update mutating configuration")

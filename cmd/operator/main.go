@@ -83,14 +83,14 @@ func main() {
 			BindAddress: "0", // metrics are served by common metrics server
 		},
 		HealthProbeBindAddress: func() string {
-			if flag.Lookup(models.MetricsFlagName).Value.String() == "true" {
+			if flag.Lookup(models.HealthzFlagName).Value.String() == "true" {
 				return httpserver.HealthzPort
 			}
 
 			return "0" // disable healthz server
 		}(),
 		LivenessEndpointName: func() string {
-			if flag.Lookup(models.MetricsFlagName).Value.String() == "true" {
+			if flag.Lookup(models.HealthzFlagName).Value.String() == "true" {
 				return httpserver.HealthzPath
 			}
 

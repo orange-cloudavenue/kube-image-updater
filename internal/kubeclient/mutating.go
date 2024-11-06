@@ -33,7 +33,7 @@ func (a *MutatorObj) GetMutatingConfiguration(ctx context.Context, name string) 
 	return a.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(ctx, name, metav1.GetOptions{})
 }
 
-func (a *MutatorObj) CreateOrUpdateMutatingConfiguration(ctx context.Context, name string, svc admissionregistrationv1.ServiceReference, policy admissionregistrationv1.FailurePolicyType) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+func (a *MutatorObj) CreateOrUpdateMutatingConfiguration(ctx context.Context, name string, svc admissionregistrationv1.ServiceReference) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	// Get kimup-operator deployment to get UID and inject owner reference to the mutating configuration
 	// This is needed to ensure that the mutating configuration is deleted when the operator is deleted
 	// This is a workaround for the lack of garbage collection in the admissionregistration.k8s.io/v1 API
@@ -84,11 +84,29 @@ func (a *MutatorObj) CreateOrUpdateMutatingConfiguration(ctx context.Context, na
 			continue
 		}
 
+		policy := admissionregistrationv1.Fail
+		an := annotations.New(ctx, &ns)
+		if !an.FailurePolicy().IsNull() {
+			switch an.FailurePolicy().Get() {
+			case annotations.FailurePolicyIgnore:
+				policy = admissionregistrationv1.Ignore
+			case annotations.FailurePolicyFail:
+				policy = admissionregistrationv1.Fail
+			}
+		}
+
 		mwc.Webhooks = append(mwc.Webhooks, a.buildMutatingWebhookConfiguration(svc, policy, &namespaceMatchConditionBuilder{Namespace: ns.Name}))
 	}
 
-	// Add the default matchCondition (All pods with annotation enabled == true)
-	mwc.Webhooks = append(mwc.Webhooks, a.buildMutatingWebhookConfiguration(svc, policy, &defaultMatchConditionBuilder{}))
+	// Add the default matchCondition (All pods with annotation enabled == true and failure policy == Fail)
+	mwc.Webhooks = append(mwc.Webhooks, a.buildMutatingWebhookConfiguration(svc, admissionregistrationv1.Fail, &defaultMatchConditionBuilder{
+		FailurePolicy: admissionregistrationv1.Fail,
+	}))
+
+	// Add the default matchCondition (All pods with annotation enabled == true and failure policy == Ignore)
+	mwc.Webhooks = append(mwc.Webhooks, a.buildMutatingWebhookConfiguration(svc, admissionregistrationv1.Ignore, &defaultMatchConditionBuilder{
+		FailurePolicy: admissionregistrationv1.Ignore,
+	}))
 
 	if mwc.UID == "" {
 		return a.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(ctx, mwc, metav1.CreateOptions{})
