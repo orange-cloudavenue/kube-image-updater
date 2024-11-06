@@ -1,0 +1,3 @@
+```release-note:bug
+`kimup-operator` - Now webhook start with default port 9443.
+```

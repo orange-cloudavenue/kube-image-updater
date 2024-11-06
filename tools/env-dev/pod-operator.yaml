@@ -17,7 +17,7 @@ spec:
         - "--healthz"
         - "--leader-elect"
       ports:
-        - containerPort: 8443
+        - containerPort: 9443
           name: webhook-server
           protocol: TCP
         - containerPort: 9080
