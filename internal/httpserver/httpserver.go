@@ -60,12 +60,11 @@ type (
 )
 
 var (
-	HealthzPort string = "" // expose var to be able to operator
+	HealthzPort int    = 0  // expose var to be able to operator
 	HealthzPath string = "" // expose var to be able to operator
-	metricsPort string = ""
+	metricsPort int    = 0
 	metricsPath string = ""
 
-	defaultAddr        string      = ":8080"
 	timeoutR                       = 5 * time.Second
 	DefaultFuncHealthz HealthzFunc = func() (bool, error) {
 		_, err := net.DialTimeout("tcp", models.HealthzDefaultAddr, timeoutR)
@@ -79,12 +78,12 @@ var (
 func init() {
 	// * Healthz
 	flag.Bool(models.HealthzFlagName, false, "Enable the healthz server.")
-	flag.StringVar(&HealthzPort, models.HealthzPortFlagName, models.HealthzDefaultAddr, "Healthz server port.")
+	flag.IntVar(&HealthzPort, models.HealthzPortFlagName, int(models.HealthzDefaultPort), "Healthz server port.")
 	flag.StringVar(&HealthzPath, models.HealthzPathFlagName, models.HealthzDefaultPath, "Healthz server path.")
 
 	// * Metrics
 	flag.Bool(models.MetricsFlagName, false, "Enable the metrics server.")
-	flag.StringVar(&metricsPort, models.MetricsPortFlagName, models.MetricsDefaultAddr, "Metrics server port.")
+	flag.IntVar(&metricsPort, models.MetricsPortFlagName, int(models.MetricsDefaultPort), "Metrics server port.")
 	flag.StringVar(&metricsPath, models.MetricsPathFlagName, models.MetricsDefaultPath, "Metrics server path.")
 }
 
@@ -135,13 +134,13 @@ func DisableMetrics() OptionServer {
 
 // Function to create a new server for health
 func (a *app) createHealth() *server {
-	s := a.new(WithAddr(HealthzPort))
+	s := a.new(WithAddr(fmt.Sprintf(":%d", HealthzPort)))
 	return s
 }
 
 // Function to create a new server for metrics
 func (a *app) createMetrics() *server {
-	s := a.new(WithAddr(metricsPort))
+	s := a.new(WithAddr(fmt.Sprintf(":%d", metricsPort)))
 	s.Config.Get(metricsPath, metrics.Handler().ServeHTTP)
 	return s
 }
@@ -156,7 +155,6 @@ func (a *app) new(opts ...Option) *server {
 	// create a new server with default parameters
 	s := &server{
 		http: &http.Server{
-			Addr:        defaultAddr,
 			ReadTimeout: timeoutR,
 		},
 		Config: r,
@@ -174,9 +172,7 @@ func (a *app) new(opts ...Option) *server {
 func WithAddr(addr string) Option {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {
-		return func(s *server) {
-			s.http.Addr = defaultAddr
-		}
+		panic(fmt.Sprintf("invalid address: %s", addr))
 	}
 	return func(s *server) {
 		s.http.Addr = addr

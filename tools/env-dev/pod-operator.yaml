@@ -14,7 +14,9 @@ spec:
       args:
         - "/main"
         - "--metrics"
+        - "--metrics-port=9080"
         - "--healthz"
+        - "--healthz-port=9081"
         - "--leader-elect"
       ports:
         - containerPort: 9443

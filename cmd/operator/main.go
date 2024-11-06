@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -84,7 +85,7 @@ func main() {
 		},
 		HealthProbeBindAddress: func() string {
 			if flag.Lookup(models.HealthzFlagName).Value.String() == "true" {
-				return httpserver.HealthzPort
+				return fmt.Sprintf(":%d", httpserver.HealthzPort)
 			}
 
 			return "0" // disable healthz server
