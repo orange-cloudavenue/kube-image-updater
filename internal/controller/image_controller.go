@@ -90,6 +90,7 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			r.Recorder.Event(&image, "Warning", string(ImageUpdate), fmt.Sprintf("Failed to set checksum: %v", err))
 			return ctrl.Result{}, err
 		}
+
 		if err := r.Client.Update(ctx, &image); err != nil {
 			xlog.WithError(err).Error("unable to update Image")
 			r.Recorder.Event(&image, "Warning", string(ImageUpdate), fmt.Sprintf("Failed to update image: %v", err))

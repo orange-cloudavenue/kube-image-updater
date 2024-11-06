@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -29,7 +28,13 @@ func generateDocImageCRD() {
 					for _, spec := range decl.(*ast.GenDecl).Specs {
 						if _, ok := spec.(*ast.ValueSpec); ok {
 							for _, ident := range spec.(*ast.ValueSpec).Names {
-								imgStatusSlice = append(imgStatusSlice, []string{fmt.Sprintf("`%s`", ident.Name), strings.TrimSuffix(ident.Obj.Decl.(*ast.ValueSpec).Doc.Text(), "\n")})
+								// Get value of const
+								if ident.Obj.Kind == ast.Con {
+									value := ident.Obj.Decl.(*ast.ValueSpec).Values[0].(*ast.BasicLit).Value
+									description := ident.Obj.Decl.(*ast.ValueSpec).Doc.Text()
+
+									imgStatusSlice = append(imgStatusSlice, []string{strings.TrimSuffix(value, "\n"), strings.TrimSuffix(description, "\n")})
+								}
 							}
 						}
 					}

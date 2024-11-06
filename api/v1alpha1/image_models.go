@@ -4,7 +4,7 @@ type (
 	ImageStatusLastSync string
 )
 
-var (
+const (
 	// Status of the image when it is last sync success.
 	ImageStatusLastSyncSuccess ImageStatusLastSync = "Success"
 

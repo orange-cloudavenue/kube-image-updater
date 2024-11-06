@@ -119,6 +119,8 @@ func main() {
 							}
 						}
 
+						refresh(event.Value)
+
 						// Remove the annotation annotations.AnnotationActionKey in the map[string]string
 						an.Remove(annotations.KeyAction)
 					}

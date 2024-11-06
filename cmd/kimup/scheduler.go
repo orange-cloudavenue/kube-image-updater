@@ -38,29 +38,49 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 		timerEvents := metrics.Events().TriggeredDuration.NewTimer()
 		defer timerEvents.ObserveDuration()
 
-		if l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] == nil {
-			l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)] = &sync.RWMutex{}
+		var (
+			namespaceName = e.Data()["namespace"].(string)
+			imageName     = e.Data()["image"].(string)
+		)
+
+		if l[namespaceName+"/"+imageName] == nil {
+			l[namespaceName+"/"+imageName] = &sync.RWMutex{}
 		}
 
 		// Lock the image to prevent concurrent refreshes
-		l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)].Lock()
-		defer l[e.Data()["namespace"].(string)+"/"+e.Data()["image"].(string)].Unlock()
+		l[namespaceName+"/"+imageName].Lock()
+		defer l[namespaceName+"/"+imageName].Unlock()
 
 		// Sleep for 1 second to prevent concurrent refreshes
 		time.Sleep(1 * time.Second)
 
 		retryErr := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			log.Infof("Refreshing image %s in namespace %s", e.Data()["image"], e.Data()["namespace"])
+			log.Infof("Refreshing image %s in namespace %s", imageName, namespaceName)
 
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
 
-			image, err := k.Image().Get(ctx, e.Data()["namespace"].(string), e.Data()["image"].(string))
+			image, err := k.Image().Get(ctx, namespaceName, imageName)
 			defer func() {
+				// Add delay to avoid conflicts
+				time.Sleep(500 * time.Millisecond)
+
 				// update the status of the image
 				image.SetStatusTime(time.Now().Format(time.RFC3339))
-				err := k.Image().UpdateStatus(ctx, image)
+
+				// Need to get image again to avoid conflicts
+				imageRefreshed, err := k.Image().Get(ctx, namespaceName, imageName)
 				if err != nil {
+					log.WithError(err).
+						WithFields(log.Fields{
+							"Namespace": namespaceName,
+							"Image":     imageName,
+						}).Error("Error getting image")
+					return
+				}
+				imageRefreshed.Status = image.Status
+
+				if err := k.Image().UpdateStatus(ctx, imageRefreshed); err != nil {
 					log.WithError(err).
 						WithFields(log.Fields{
 							"Namespace": e.Data()["namespace"],
@@ -70,12 +90,15 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			}()
 			if err != nil {
 				image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorGetImage)
-				if err := crontab.RemoveJob(crontab.BuildKey(e.Data()["namespace"].(string), e.Data()["image"].(string))); err != nil {
+				if err := crontab.RemoveJob(crontab.BuildKey(namespaceName, imageName)); err != nil {
 					return err
 				}
 				return err
 			}
 			k.Image().Event(&image, corev1.EventTypeNormal, "Image update triggered", "")
+
+			// Set Status to Scheduled permit in the execution of the refresh if the image have a error or not
+			image.SetStatusResult(v1alpha1.ImageStatusLastSyncScheduled)
 
 			var auths kubeclient.K8sDockerRegistrySecretData
 
@@ -174,8 +197,9 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				if match {
 					for _, action := range rule.Actions {
 						a, err := actions.GetActionWithUntypedName(action.Type)
-						image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorAction)
 						if err != nil {
+							image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorAction)
+							k.Image().Event(&image, corev1.EventTypeWarning, "Get action", fmt.Sprintf("Error getting action %s: %v", action.Type, err))
 							log.Errorf("Error getting action: %v", err)
 							continue
 						}
@@ -209,7 +233,9 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 				}
 			}
 
-			image.SetStatusResult(v1alpha1.ImageStatusLastSyncSuccess)
+			if image.Status.Result == v1alpha1.ImageStatusLastSyncScheduled {
+				image.SetStatusResult(v1alpha1.ImageStatusLastSyncSuccess)
+			}
 			return k.Image().Update(ctx, image)
 		})
 
