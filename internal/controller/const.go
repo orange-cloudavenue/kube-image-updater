@@ -1,7 +1,5 @@
 package controller
 
-var Version = "dev"
-
 const (
 	BaseKimupImage = "ghcr.io/orange-cloudavenue/"
 
@@ -14,10 +12,6 @@ const (
 	KimupController      = "controller"
 	KimupControllerName  = KimupName + "-" + KimupController
 	KimupControllerImage = BaseKimupImage + KimupControllerName
-
-	KimupAdmissionController      = "admission-controler"
-	KimupAdmissionControllerName  = KimupName + "-" + KimupAdmissionController
-	KimupAdmissionControllerImage = BaseKimupImage + KimupAdmissionControllerName
 )
 
 const (

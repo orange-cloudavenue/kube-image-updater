@@ -9,7 +9,7 @@ release:
   prerelease: auto
 
 snapshot:
-  version_template: "{{ .Tag }}"
+  version_template: "{{ .Version }}"
 
 checksum:
   name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
@@ -26,6 +26,8 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - '-X github.com/orange-cloudavenue/kube-image-updater/internal/models.Version={{.Tag}}'
   - id: "kimup-operator"
     binary: kimup-operator
     main: ./cmd/operator
@@ -37,6 +39,8 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - '-X github.com/orange-cloudavenue/kube-image-updater/internal/models/models.Version={{.Tag}}'
 
 dockers:
   # * KIMUP

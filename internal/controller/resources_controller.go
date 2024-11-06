@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/orange-cloudavenue/kube-image-updater/api/v1alpha1"
+	"github.com/orange-cloudavenue/kube-image-updater/internal/models"
 	"github.com/orange-cloudavenue/kube-image-updater/internal/utils"
 )
 
@@ -23,7 +24,7 @@ func GetKimupControllerResources(ctx context.Context, ki v1alpha1.Kimup) []Objec
 	)
 
 	if image == "" {
-		image = fmt.Sprintf("%s:%s", KimupControllerImage, Version)
+		image = fmt.Sprintf("%s:%s", KimupControllerImage, models.Version)
 	}
 
 	// Create a deployment
@@ -48,7 +49,7 @@ func GetKimupControllerResources(ctx context.Context, ki v1alpha1.Kimup) []Objec
 				KubernetesAppComponentLabelKey: KimupControllerName,
 				KubernetesAppInstanceNameLabel: name,
 				KubernetesAppNameLabelKey:      KimupControllerName,
-				KubernetesAppVersionLabelKey:   Version,
+				KubernetesAppVersionLabelKey:   models.Version,
 				KubernetesPartOfLabelKey:       KimupControllerName,
 				KubernetesManagedByLabelKey:    KimupOperatorName,
 				"app":                          name,
@@ -135,7 +136,7 @@ func GetKimupControllerResources(ctx context.Context, ki v1alpha1.Kimup) []Objec
 					KubernetesAppComponentLabelKey: KimupControllerName,
 					KubernetesAppInstanceNameLabel: name,
 					KubernetesAppNameLabelKey:      KimupControllerName,
-					KubernetesAppVersionLabelKey:   Version,
+					KubernetesAppVersionLabelKey:   models.Version,
 					KubernetesPartOfLabelKey:       KimupControllerName,
 					KubernetesManagedByLabelKey:    KimupOperatorName,
 					"app":                          name,
