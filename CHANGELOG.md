@@ -4,9 +4,14 @@
 
 * `Image` - Add new annotation `kimup.cloudavenue.io/failure-policy` to control the failure policy of the image tag mutation. The default value is `Fail`. The supported values are `Fail` and `Ignore`. (GH-93)
 
+### :tada: **Improvements**
+
+* `image/status` - Fix the documentation of the `image/status. (GH-101)
+
 ### :bug: **Bug Fixes**
 
 * `healthz` - Fix the issue where the port specified in the `healthz-port` configuration was not being used. (GH-100)
+* `image` - Now the image is displayed correctly the `last-result`. (GH-101)
 * `image` - Now the status of the image is displayed correctly in the `image` list if the image/repository is not found in the registry. (GH-103)
 * `kimup-operator` - Now webhook start with default port 9443. (GH-105)
 * `metrics` - Fix the issue where the port specified in the `metrics-port` configuration was not being used. (GH-100)
