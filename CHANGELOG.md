@@ -7,6 +7,7 @@
 ### :bug: **Bug Fixes**
 
 * `healthz` - Fix the issue where the port specified in the `healthz-port` configuration was not being used. (GH-100)
+* `image` - Now the status of the image is displayed correctly in the `image` list if the image/repository is not found in the registry. (GH-103)
 * `kimup-operator` - Now webhook start with default port 9443. (GH-105)
 * `metrics` - Fix the issue where the port specified in the `metrics-port` configuration was not being used. (GH-100)
 
