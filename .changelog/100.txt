@@ -1,0 +1,7 @@
+```release-note:bug
+`metrics` - Fix the issue where the port specified in the `metrics-port` configuration was not being used.
+```
+
+```release-note:bug
+`healthz` - Fix the issue where the port specified in the `healthz-port` configuration was not being used.
+```
