@@ -1,0 +1,3 @@
+```release-note:bug
+`kimup-controller` - Now the application restart if the kubernetes watch connection is lost.
+```
