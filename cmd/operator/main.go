@@ -75,7 +75,7 @@ func main() {
 
 	ctrl.SetLogger(logrusr.New(log.GetLogger()))
 
-	webhook := webhook.NewServer(webhook.Options{})
+	webhook := webhook.NewServer(webhook.Options{Port: models.MutatorDefaultPort})
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
