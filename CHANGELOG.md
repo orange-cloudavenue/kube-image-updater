@@ -1,4 +1,9 @@
 ## 0.2.0 (Unreleased)
+
+### :bug: **Bug Fixes**
+
+* `kimup-operator` - Now webhook start with default port 9443. (GH-105)
+
 ## 0.1.0 (November  3, 2024)
 ### :rotating_light: **Breaking Changes**
 
