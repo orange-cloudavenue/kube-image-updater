@@ -1,5 +1,9 @@
 ## 0.2.0 (Unreleased)
 
+### :rocket: **New Features**
+
+* `Image` - Add new annotation `kimup.cloudavenue.io/failure-policy` to control the failure policy of the image tag mutation. The default value is `Fail`. The supported values are `Fail` and `Ignore`. (GH-93)
+
 ### :bug: **Bug Fixes**
 
 * `kimup-operator` - Now webhook start with default port 9443. (GH-105)
