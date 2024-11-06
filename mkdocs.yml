@@ -30,6 +30,7 @@ nav:
       - Email: actions/alerts/email.md
   - Advanced:
     - Metrics: advanced/metrics.md
+    - FailurePolicy: advanced/failurepolicy.md
 
 # ! Other settings
 

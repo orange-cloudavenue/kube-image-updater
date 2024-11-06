@@ -1,0 +1,3 @@
+```release-note:feature
+`Image` - Add new annotation `kimup.cloudavenue.io/failure-policy` to control the failure policy of the image tag mutation. The default value is `Fail`. The supported values are `Fail` and `Ignore`.
+```
