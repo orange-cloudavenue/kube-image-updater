@@ -1,0 +1,3 @@
+```release-note:bug
+`image` - Now the status of the image is displayed correctly in the `image` list if the image/repository is not found in the registry.
+```

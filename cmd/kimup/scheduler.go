@@ -110,9 +110,10 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			})
 			timerRegistry.ObserveDuration()
 			if err != nil {
-				// Prometheus metrics - Increment the counter for the registry with error
 				metrics.Registry().RequestErrorTotal.WithLabelValues(i.GetRegistry()).Inc()
 				image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorRegistry)
+				k.Image().Event(&image, corev1.EventTypeWarning, "Fetch image", fmt.Sprintf("Error fetching image: %v", err))
+				log.WithError(err).Error("Error fetching image")
 				return err
 			}
 
@@ -123,8 +124,8 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 			tagsAvailable, err := re.Tags()
 			timerTags.ObserveDuration()
 			if err != nil {
-				// Prometheus metrics - Increment the counter for the tags with error
 				metrics.Tags().RequestErrorTotal.Inc()
+				image.SetStatusResult(v1alpha1.ImageStatusLastSyncErrorTags)
 				k.Image().Event(&image, corev1.EventTypeWarning, "Fetch image tags", fmt.Sprintf("Error fetching tags: %v", err))
 				log.WithError(err).Error("Error fetching tags")
 				return err
@@ -161,8 +162,8 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 
 				if err != nil {
 					// Prometheus metrics - Increment the counter for the evaluated rule with error
+					image.SetStatusResult(v1alpha1.ImageStatusLastSyncError)
 					metrics.Rules().EvaluatedErrorTotal.Inc()
-
 					log.Errorf("Error evaluating rule: %v", err)
 					k.Image().Event(&image, corev1.EventTypeWarning, "Evaluate rule", fmt.Sprintf("Error evaluating rule %s: %v", rule.Type, err))
 					continue
@@ -197,7 +198,7 @@ func initScheduler(ctx context.Context, k kubeclient.Interface) {
 						if err != nil {
 							// Prometheus metrics - Increment the counter for the executed action with error
 							metrics.Actions().ExecutedErrorTotal.Inc()
-
+							image.SetStatusResult(v1alpha1.ImageStatusLastSyncError)
 							log.Errorf("Error executing action(%s): %v", action.Type, err)
 							k.Image().Event(&image, corev1.EventTypeWarning, "Execute action", fmt.Sprintf("Error executing action %s: %v", action.Type, err))
 							continue
