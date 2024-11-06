@@ -18,11 +18,7 @@ import (
 	"github.com/orange-cloudavenue/kube-image-updater/internal/triggers"
 )
 
-var (
-	version = "dev" // set by build script
-
-	c = make(chan os.Signal, 1)
-)
+var c = make(chan os.Signal, 1)
 
 func init() {
 	// Initialize the metrics
@@ -40,7 +36,7 @@ func init() {
 func main() {
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
-	log.WithField("version", version).Info("Starting kimup", version)
+	log.WithField("version", models.Version).Info("Starting kimup", models.Version)
 
 	// kubernetes golang library provide flag "kubeconfig" to specify the path to the kubeconfig file
 	k, err := kubeclient.New(flag.Lookup("kubeconfig").Value.String(), kubeclient.ComponentController)

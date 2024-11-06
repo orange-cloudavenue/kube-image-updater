@@ -27,7 +27,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - '-X main.version={{.Tag}}'
+      - '-X github.com/orange-cloudavenue/kube-image-updater/internal/models.Version={{.Tag}}'
   - id: "kimup-operator"
     binary: kimup-operator
     main: ./cmd/operator
@@ -39,6 +39,8 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - '-X github.com/orange-cloudavenue/kube-image-updater/internal/models/models.Version={{.Tag}}'
 
 dockers:
   # * KIMUP
