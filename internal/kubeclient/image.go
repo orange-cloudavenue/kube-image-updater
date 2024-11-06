@@ -152,24 +152,28 @@ func (i *ImageObj) Find(ctx context.Context, namespace, imageName string) (v1alp
 // Watch watches for changes to the image object.
 // It takes a context and the namespace as parameters.
 // Returns a channel of WatchInterface[v1alpha1.Image] and an error if the operation fails.
-func (i *ImageObj) Watch(ctx context.Context) (chan WatchInterface[v1alpha1.Image], error) {
+func (i *ImageObj) Watch(ctx context.Context) (chan WatchInterface[v1alpha1.Image], chan error, error) {
 	x, err := i.imageClient.Watch(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ch := make(chan WatchInterface[v1alpha1.Image])
-
+	chErr := make(chan error)
 	go func() {
+		defer close(chErr)
+
 		for {
 			select {
 			case <-ctx.Done():
 				close(ch)
 				x.Stop()
+				chErr <- fmt.Errorf("watch channel closed")
 				return
 			case event, ok := <-x.ResultChan():
 				if !ok {
 					close(ch)
+					chErr <- fmt.Errorf("watch channel closed")
 					return
 				}
 
@@ -184,7 +188,7 @@ func (i *ImageObj) Watch(ctx context.Context) (chan WatchInterface[v1alpha1.Imag
 		}
 	}()
 
-	return ch, nil
+	return ch, chErr, nil
 }
 
 // UpdateStatus updates the status of the image object.

@@ -67,7 +67,7 @@ func main() {
 	initScheduler(ctx, k)
 
 	go func() {
-		x, err := k.Image().Watch(ctx)
+		x, xErr, err := k.Image().Watch(ctx)
 		if err != nil {
 			log.WithError(err).Panic("Error watching events")
 		}
@@ -75,6 +75,13 @@ func main() {
 		for {
 			select {
 			case <-ctx.Done():
+				return
+			case err, ok := <-xErr:
+				if ok {
+					log.WithError(err).Error("Error watching events from kubernetes")
+				}
+				// Exit the program
+				c <- syscall.SIGINT
 				return
 			case event, ok := <-x:
 				if !ok {
@@ -131,6 +138,10 @@ func main() {
 
 				case "DELETED":
 					cleanTriggers(&event.Value)
+				case "ERROR":
+					log.Error("Error watching events from kubernetes")
+					// exit the program
+					c <- syscall.SIGINT
 				}
 			}
 		}
