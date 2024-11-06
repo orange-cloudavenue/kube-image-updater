@@ -13,6 +13,7 @@
 * `healthz` - Fix the issue where the port specified in the `healthz-port` configuration was not being used. (GH-100)
 * `image` - Now the image is displayed correctly the `last-result`. (GH-101)
 * `image` - Now the status of the image is displayed correctly in the `image` list if the image/repository is not found in the registry. (GH-103)
+* `kimup-controller` - Now the application restart if the kubernetes watch connection is lost. (GH-109)
 * `kimup-operator` - Now webhook start with default port 9443. (GH-105)
 * `metrics` - Fix the issue where the port specified in the `metrics-port` configuration was not being used. (GH-100)
 
