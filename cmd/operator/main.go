@@ -76,8 +76,6 @@ func main() {
 
 	ctrl.SetLogger(logrusr.New(log.GetLogger()))
 
-	webhook := webhook.NewServer(webhook.Options{Port: models.MutatorDefaultPort})
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -99,7 +97,7 @@ func main() {
 		}(),
 		LeaderElection:   enableLeaderElection,
 		LeaderElectionID: "71be4586.kimup.cloudavenue.io",
-		WebhookServer:    webhook,
+		WebhookServer:    webhook.NewServer(webhook.Options{Port: models.MutatorDefaultPort}),
 	})
 	if err != nil {
 		log.WithError(err).Error("unable to start manager")
@@ -178,7 +176,7 @@ func main() {
 		c <- syscall.SIGINT
 	}
 
-	log.Info("Starting operator")
+	log.WithField("version", models.Version).Info("Starting kimup operator", models.Version)
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		log.WithError(err).Error(err, "problem running manager")
 		c <- syscall.SIGINT
