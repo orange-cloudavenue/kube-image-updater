@@ -17,6 +17,10 @@
 * `kimup-operator` - Now webhook start with default port 9443. (GH-105)
 * `metrics` - Fix the issue where the port specified in the `metrics-port` configuration was not being used. (GH-100)
 
+### :dependabot: **Dependencies**
+
+* deps: bumps github.com/onsi/ginkgo/v2 from 2.20.2 to 2.21.0 (GH-96)
+
 ## 0.1.0 (November  3, 2024)
 ### :rotating_light: **Breaking Changes**
 
