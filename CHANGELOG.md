@@ -1,4 +1,9 @@
 ## 0.3.0 (Unreleased)
+
+### :bug: **Bug Fixes**
+
+* `kimup-controller` - Fix rbac authorization to read secrets. (GH-121)
+
 ## 0.2.0 (November  7, 2024)
 
 ### :rocket: **New Features**
