@@ -4,6 +4,10 @@
 
 * `kimup-controller` - Fix rbac authorization to read secrets. (GH-121)
 
+### :dependabot: **Dependencies**
+
+* deps: bumps golang.org/x/term from 0.25.0 to 0.26.0 (GH-124)
+
 ## 0.2.0 (November  7, 2024)
 
 ### :rocket: **New Features**
