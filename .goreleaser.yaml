@@ -40,7 +40,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - '-X github.com/orange-cloudavenue/kube-image-updater/internal/models/models.Version={{.Tag}}'
+      - '-X github.com/orange-cloudavenue/kube-image-updater/internal/models.Version={{.Tag}}'
 
 dockers:
   # * KIMUP

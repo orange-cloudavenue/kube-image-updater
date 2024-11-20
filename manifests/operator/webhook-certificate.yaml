@@ -5,8 +5,8 @@ metadata:
   namespace: kimup-operator
 spec:
   dnsNames:
-  - mutator.kimup-operator.svc
-  - mutator.kimup-operator.svc.cluster.local
+  - kimup-operator.kimup-operator.svc
+  - kimup-operator.kimup-operator.svc.cluster.local
   secretName: kimup-webhook-serving-cert
   issuerRef:
     kind: Issuer

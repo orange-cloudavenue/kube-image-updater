@@ -24,7 +24,7 @@ func buildKimupArgs(extra v1alpha1.KimupExtraSpec) (args []string) {
 
 		// set the healthz port
 		healthzPort := extra.Healthz.Port
-		if healthzPort != 0 {
+		if healthzPort == 0 {
 			healthzPort = models.HealthzDefaultPort
 		}
 		args = append(args, fmt.Sprintf("--%s=%d", models.HealthzPortFlagName, healthzPort))
@@ -43,7 +43,7 @@ func buildKimupArgs(extra v1alpha1.KimupExtraSpec) (args []string) {
 
 		// set the metrics port
 		metricsPort := extra.Metrics.Port
-		if metricsPort != 0 {
+		if metricsPort == 0 {
 			metricsPort = models.MetricsDefaultPort
 		}
 
@@ -58,7 +58,6 @@ func buildKimupArgs(extra v1alpha1.KimupExtraSpec) (args []string) {
 		args = append(args, fmt.Sprintf("--%s=%s", models.MetricsPathFlagName, metricsPath))
 	}
 
-	// TODO
 	args = append(args, fmt.Sprintf("--%s=%s", models.LogLevelFlagName, extra.LogLevel))
 
 	return args

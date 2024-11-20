@@ -28,7 +28,6 @@ func init() {
 	metrics.Rules()
 	metrics.Registry()
 
-	// TODO add namespace scope
 	// Flag "loglevel" is set in log package
 	flag.Parse()
 }
