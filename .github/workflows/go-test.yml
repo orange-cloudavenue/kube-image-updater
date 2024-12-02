@@ -23,7 +23,7 @@ jobs:
         go-version-file: 'go.mod'
     - run: go mod download
     - name: Docker Setup Docker
-      uses: crazy-max/ghaction-setup-docker@v3.4.0
+      uses: crazy-max/ghaction-setup-docker@v3.5.0
     - name: Run Go unit tests
       run: |
         go test ./...
