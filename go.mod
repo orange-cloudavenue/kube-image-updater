@@ -18,7 +18,7 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gookit/event v1.1.2
 	github.com/iancoleman/strcase v0.3.0
-	github.com/onsi/ginkgo/v2 v2.21.0
+	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/reugn/go-quartz v0.13.0
