@@ -1,0 +1,3 @@
+```release-note:dependency
+deps: bumps k8s.io/apimachinery from 0.31.2 to 0.31.3
+```
