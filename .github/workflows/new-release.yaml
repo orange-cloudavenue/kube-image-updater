@@ -20,7 +20,7 @@ jobs:
       TAG_NAME: ${{ steps.set-tag.outputs.TAG_NAME }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.CHANGELOG_PAT }}
       - name: Check if tag is valid
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.CHANGELOG_PAT }}
       - name: Check if tag not already exists
@@ -54,7 +54,7 @@ jobs:
     needs: [pre-check]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.CHANGELOG_PAT }}
           ref: ${{ github.ref }}
@@ -70,7 +70,7 @@ jobs:
     needs: [pre-check]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         token: ${{ secrets.CHANGELOG_PAT }}
         ref: ${{ github.ref }}
@@ -88,7 +88,7 @@ jobs:
     name: Generate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # v3.5.0
+      - uses: actions/checkout@v6 # v3.5.0
       - uses: actions/setup-go@v5 # v4.0.0
         with:
           go-version-file: 'go.mod'
@@ -102,7 +102,7 @@ jobs:
     name: Kube Builder
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # v3.5.0
+      - uses: actions/checkout@v6 # v3.5.0
       - uses: actions/setup-go@v5 # v4.0.0
         with:
           go-version-file: 'go.mod'
@@ -118,7 +118,7 @@ jobs:
     needs: [golangci-lint, pre-check, tag-already-exist, testsunit, generate, kubebuilder]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.CHANGELOG_PAT }}
       - uses: rickstaa/action-create-tag@v1
@@ -131,7 +131,7 @@ jobs:
     needs: [tag, pre-check]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ needs.pre-check.outputs.TAG_NAME }}
@@ -151,7 +151,7 @@ jobs:
     needs: [release-notes, pre-check]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref:  ${{ needs.pre-check.outputs.TAG_NAME }}
@@ -194,7 +194,7 @@ jobs:
     needs: [release-app, pre-check]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.CHANGELOG_PAT }}
           fetch-depth: 0
