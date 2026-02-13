@@ -15,7 +15,7 @@ jobs:
         id: dependabot-metadata
         uses: dependabot/fetch-metadata@dbb049abf0d677abbd7f7eee0375145b417fdd34    # v2.2.0
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608             # v4.1.0
-      - uses: sersoft-gmbh/setup-gh-cli-action@v2
+      - uses: sersoft-gmbh/setup-gh-cli-action@v3
         with:
           version: stable
       - run: |
